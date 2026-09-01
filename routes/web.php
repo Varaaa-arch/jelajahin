@@ -14,6 +14,10 @@ Route::get('/', function () {
     ]);
 });
 
+Route::get('/flights/search', function () {
+    return Inertia::render('Flight/Search');
+})->name('flights.search');
+
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');

@@ -26,6 +26,7 @@ export interface Route {
 }
 
 export interface Flight {
+  estimated_duration_minutes: string;
   id: string;
   flight_number: string;
   route_id: string;
