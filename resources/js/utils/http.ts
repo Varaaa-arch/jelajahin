@@ -11,9 +11,6 @@ export const httpClient = axios.create({
   },
 })
 
-// Add CORS headers
-httpClient.defaults.headers.common['Access-Control-Allow-Origin'] = '*'
-
 // Add auth token to requests
 httpClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('auth_token')

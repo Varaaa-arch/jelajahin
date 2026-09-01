@@ -45,7 +45,12 @@
       <!-- Results -->
       <div v-if="flights.length > 0" class="space-y-4">
         <h2 class="text-2xl font-bold mb-6">{{ flights.length }} Penerbangan</h2>
-        <div v-for="flight in flights" :key="flight.id" class="bg-white p-6 rounded-lg shadow">
+        <div
+          v-for="flight in flights"
+          :key="flight.id"
+          @click="handleSelectFlight(flight.id)"
+          class="bg-white p-6 rounded-lg shadow cursor-pointer hover:shadow-lg transition"
+        >
           <div class="flex justify-between items-center">
             <div>
               <p class="font-semibold">{{ flight.flight_number }}</p>
@@ -68,6 +73,7 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import { router } from '@inertiajs/vue3'
 import { httpClient } from '@/utils/http'
 
 const loading = ref(false)
@@ -80,6 +86,10 @@ const searchParams = reactive({
   destination: '',
   departure_date: '',
 })
+
+const handleSelectFlight = (flightId: string) => {
+  router.get(route('flight.detail', { flightId }))
+}
 
 const handleSearch = async () => {
   if (!searchParams.origin || !searchParams.destination || !searchParams.departure_date) {

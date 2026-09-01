@@ -18,6 +18,12 @@ Route::get('/flights/search', function () {
     return Inertia::render('Flight/Search');
 })->name('flights.search');
 
+Route::get('/flights/{flightId}', function (string $flightId) {
+    return Inertia::render('Flight/Detail', [
+        'flightId' => $flightId,
+    ]);
+})->name('flight.detail');
+
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
