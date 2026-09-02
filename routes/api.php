@@ -12,3 +12,10 @@ Route::prefix('bookings')->group(function () {
     Route::get('/{pnr}', [\App\Http\Controllers\BookingController::class, 'getByPNR']);
     Route::get('/user/{userId}', [\App\Http\Controllers\BookingController::class, 'getUserBookings']);
 });
+
+Route::prefix('payments')->group(function () {
+    Route::post('/initiate', [\App\Http\Controllers\PaymentController::class, 'initiatePayment']);
+    Route::post('/process', [\App\Http\Controllers\PaymentController::class, 'processPayment']);
+    Route::post('/webhook', [\App\Http\Controllers\PaymentController::class, 'webhookCallback']);
+    Route::get('/{transactionId}', [\App\Http\Controllers\PaymentController::class, 'getPaymentStatus']);
+});
