@@ -4,61 +4,18 @@ namespace App\Services;
 
 use App\Models\Booking;
 use App\Models\Payment;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
 
 class PaymentService
 {
-    /**
-     * Initiate payment - generate fake payment token
-     */
-    public function initiatePayment(Booking $booking): array
+    private NotificationService $notificationService;
+
+    public function __construct(NotificationService $notificationService = null)
     {
-        // Check if payment already exists (pending or success)
-        $existingPayment = Payment::where('booking_id', $booking->id)
-            ->whereIn('status', ['pending', 'success'])
-            ->first();
-
-        if ($existingPayment && $existingPayment->status === 'success') {
-            return [
-                'success' => true,
-                'transaction_id' => $existingPayment->transaction_id,
-                'token' => $existingPayment->token,
-                'amount' => $existingPayment->amount,
-                'status' => 'success',
-                'redirect_url' => "http://localhost:8001/payment/{$existingPayment->token}",
-                'expires_at' => $existingPayment->expires_at->toIso8601String(),
-            ];
-        }
-
-        // Generate unique token
-        $token = $this->generatePaymentToken();
-        $transactionId = $this->generateTransactionId();
-
-        // Create payment record with PENDING status
-        $payment = Payment::create([
-            'booking_id' => $booking->id,
-            'transaction_id' => $transactionId,
-            'payment_method' => 'fake_gateway',
-            'amount' => $booking->total_price,
-            'status' => 'pending',  // IMPORTANT: Start with pending
-            'token' => $token,
-            'expires_at' => now()->addMinutes(15),
-        ]);
-
-        return [
-            'success' => true,
-            'transaction_id' => $transactionId,
-            'token' => $token,
-            'amount' => $booking->total_price,
-            'status' => 'pending',
-            'redirect_url' => "http://localhost:8001/payment/{$token}",
-            'expires_at' => $payment->expires_at->toIso8601String(),
-        ];
+        $this->notificationService = $notificationService ?? new NotificationService();
     }
 
-    /**
-     * Process payment - simulate auto-success
-     */
     public function processPayment(string $token): array
     {
         $payment = Payment::where('token', $token)->first();
@@ -83,6 +40,9 @@ class PaymentService
             $this->updatePaymentStatus($payment, 'success');
             $this->updateBookingStatus($payment->booking, 'confirmed');
 
+            // Send notifications
+            $this->notificationService->notifyBookingComplete($payment->booking);
+
             return [
                 'success' => true,
                 'message' => 'Payment successful',
@@ -104,9 +64,6 @@ class PaymentService
         }
     }
 
-    /**
-     * Webhook callback - handle payment confirmation
-     */
     public function handleWebhookCallback(array $data): array
     {
         $transactionId = $data['transaction_id'] ?? null;
@@ -128,6 +85,7 @@ class PaymentService
 
         if ($mappedStatus === 'success') {
             $this->updateBookingStatus($payment->booking, 'confirmed');
+            $this->notificationService->notifyBookingComplete($payment->booking);
         } elseif (in_array($mappedStatus, ['expired', 'deny', 'failed'])) {
             $this->updateBookingStatus($payment->booking, 'payment_failed');
         }
@@ -140,9 +98,48 @@ class PaymentService
         ];
     }
 
-    /**
-     * Get payment status
-     */
+    public function initiatePayment(Booking $booking): array
+    {
+        $existingPayment = Payment::where('booking_id', $booking->id)
+            ->whereIn('status', ['pending', 'success'])
+            ->first();
+
+        if ($existingPayment && $existingPayment->status === 'success') {
+            return [
+                'success' => true,
+                'transaction_id' => $existingPayment->transaction_id,
+                'token' => $existingPayment->token,
+                'amount' => $existingPayment->amount,
+                'status' => 'success',
+                'redirect_url' => "http://localhost:8001/payment/{$existingPayment->token}",
+                'expires_at' => $existingPayment->expires_at->toIso8601String(),
+            ];
+        }
+
+        $token = $this->generatePaymentToken();
+        $transactionId = $this->generateTransactionId();
+
+        $payment = Payment::create([
+            'booking_id' => $booking->id,
+            'transaction_id' => $transactionId,
+            'payment_method' => 'fake_gateway',
+            'amount' => $booking->total_price,
+            'status' => 'pending',
+            'token' => $token,
+            'expires_at' => now()->addMinutes(15),
+        ]);
+
+        return [
+            'success' => true,
+            'transaction_id' => $transactionId,
+            'token' => $token,
+            'amount' => $booking->total_price,
+            'status' => 'pending',
+            'redirect_url' => "http://localhost:8001/payment/{$token}",
+            'expires_at' => $payment->expires_at->toIso8601String(),
+        ];
+    }
+
     public function getPaymentStatus(string $transactionId): array
     {
         $payment = Payment::where('transaction_id', $transactionId)->first();
@@ -162,9 +159,6 @@ class PaymentService
         ];
     }
 
-    /**
-     * Update payment status
-     */
     private function updatePaymentStatus(Payment $payment, string $status): void
     {
         $updateData = ['status' => $status];
@@ -176,9 +170,6 @@ class PaymentService
         $payment->update($updateData);
     }
 
-    /**
-     * Update booking status
-     */
     private function updateBookingStatus(Booking $booking, string $status): void
     {
         $validStatuses = [
@@ -196,9 +187,6 @@ class PaymentService
         $booking->update(['status' => $status]);
     }
 
-    /**
-     * Map webhook status
-     */
     private function mapWebhookStatus(string $webhookStatus): string
     {
         $mapping = [
@@ -215,9 +203,6 @@ class PaymentService
         return $mapping[$webhookStatus] ?? 'pending';
     }
 
-    /**
-     * Generate unique payment token
-     */
     private function generatePaymentToken(): string
     {
         do {
@@ -227,9 +212,6 @@ class PaymentService
         return $token;
     }
 
-    /**
-     * Generate unique transaction ID
-     */
     private function generateTransactionId(): string
     {
         do {
