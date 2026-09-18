@@ -31,4 +31,14 @@ class Flight extends Model
         'departure_date' => 'date',
         'base_price' => 'float',
     ];
+
+    public function route()
+    {
+        return $this->belongsTo(\App\Models\Route::class);
+    }
+
+    public function flightSeats()
+    {
+        return $this->hasMany(\App\Models\FlightSeat::class);
+    }
 }

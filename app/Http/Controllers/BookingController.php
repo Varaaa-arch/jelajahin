@@ -39,7 +39,7 @@ class BookingController extends Controller
             'passengers.*.last_name'       => 'required|string|max:100',
             'passengers.*.date_of_birth'   => 'required|date',
             'passengers.*.gender'          => 'required|in:M,F',
-            'passengers.*.identity_type'   => 'required|in:passport,ktp,sim',
+            'passengers.*.identity_type'   => 'required|in:passport,ktp,sim,id_card,driver_license',
             'passengers.*.identity_number' => 'required|string|max:50',
             'passengers.*.nationality'     => 'nullable|string|max:50',
             'passengers.*.passport_number' => 'nullable|string|max:20',

@@ -7,6 +7,12 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+Route::prefix('v1/flights')->group(function () {
+    Route::get('/search', [\App\Http\Controllers\FlightController::class, 'search']);
+    Route::get('/{id}/seats', [\App\Http\Controllers\FlightController::class, 'seats']);
+    Route::get('/{id}', [\App\Http\Controllers\FlightController::class, 'show']);
+});
+
 Route::prefix('bookings')->group(function () {
     Route::post('/', [\App\Http\Controllers\BookingController::class, 'createBooking']);
     Route::get('/{pnr}', [\App\Http\Controllers\BookingController::class, 'getByPNR']);
