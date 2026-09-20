@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 export default defineConfig({
     plugins: [
         laravel({
-            input: 'resources/js/app.tsx',
+            input: 'resources/js/app.ts',
             refresh: true,
         }),
         vue({
