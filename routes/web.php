@@ -11,6 +11,14 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
+Route::get('/about', function () {
+    return Inertia::render('About');
+})->name('about');
+
+Route::get('/about', function () {
+    return Inertia::render('About');
+})->name('about');
+
 Route::get('/flights/search', function () {
     return Inertia::render('Flight/Search');
 })->name('flights.search');

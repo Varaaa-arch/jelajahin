@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { Link, usePage } from '@inertiajs/vue3'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const isScrolled = ref(false)
 const isMobileMenuOpen = ref(false)
+const page = usePage()
+
+// Active route helper
+const currentRoute = computed(() => page.url)
+
+function isActive(href: string) {
+  return currentRoute.value === href || currentRoute.value.startsWith(href + '/')
+}
 
 function handleScroll() {
   isScrolled.value = window.scrollY > 60
@@ -34,12 +42,13 @@ onUnmounted(() => {
   document.body.style.overflow = ''
 })
 
+// Nav links — pakai route name untuk Inertia Link
 const navLinks = [
-  { label: 'Mobil', href: '#' },
-  { label: 'Rental', href: '#' },
-  { label: 'Lokasi', href: '#' },
-  { label: 'Panduan', href: '#' },
-  { label: 'Dukungan', href: '#' },
+  { label: 'Beranda',      routeName: 'home',    href: '/' },
+  { label: 'Tentang Kami', routeName: 'about',   href: '/about' },
+  { label: 'Penerbangan',  routeName: 'flights.search', href: '/flights/search' },
+  { label: 'Panduan',      routeName: null,      href: '#' },
+  { label: 'Dukungan',     routeName: null,      href: '#' },
 ]
 </script>
 
@@ -49,7 +58,7 @@ const navLinks = [
     :class="[
       'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
       'bg-navy border-b border-white/5',
-      isScrolled ? 'shadow-2xl backdrop-blur-md bg-navy/95' : ''
+      isScrolled ? 'shadow-2xl backdrop-blur-md bg-navy/95' : '',
     ]"
     aria-label="Menu utama"
   >
@@ -57,7 +66,7 @@ const navLinks = [
       <div class="flex items-center h-16 gap-8">
 
         <!-- Logo -->
-        <Link href="/" class="text-white font-black text-xl tracking-tight shrink-0">
+        <Link href="/" class="text-white font-black text-xl tracking-tight shrink-0 hover:opacity-90 transition-opacity">
           Jelajahin
         </Link>
 
@@ -76,20 +85,20 @@ const navLinks = [
 
         <!-- Nav links (desktop) -->
         <nav class="hidden lg:flex items-center gap-1 ml-auto" aria-label="Navigasi utama">
-          <a
+          <Link
             v-for="link in navLinks"
             :key="link.label"
             :href="link.href"
-            class="text-white/75 text-sm font-medium px-3 py-1.5 rounded-md hover:text-white hover:bg-white/7 transition-all"
+            :class="[
+              'text-sm font-medium px-3 py-1.5 rounded-md transition-all',
+              isActive(link.href) && link.href !== '#'
+                ? 'text-white bg-white/12'
+                : 'text-white/75 hover:text-white hover:bg-white/7',
+            ]"
+            :aria-current="isActive(link.href) && link.href !== '#' ? 'page' : undefined"
           >
             {{ link.label }}
-          </a>
-          <button class="flex items-center gap-1 text-white/75 text-sm font-medium px-3 py-1.5 rounded-md hover:text-white hover:bg-white/7 transition-all">
-            Lainnya
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </button>
+          </Link>
         </nav>
 
         <!-- Auth buttons (desktop) -->
@@ -163,29 +172,43 @@ const navLinks = [
                 @click="closeMobileMenu"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
               </button>
             </div>
 
-            <a
+            <!-- Mobile nav links -->
+            <Link
               v-for="link in navLinks"
               :key="link.label"
               :href="link.href"
-              class="text-white/75 text-base font-medium px-4 py-3 rounded-md hover:text-white hover:bg-white/7 transition-all"
+              :class="[
+                'text-base font-medium px-4 py-3 rounded-md transition-all',
+                isActive(link.href) && link.href !== '#'
+                  ? 'text-white bg-white/12'
+                  : 'text-white/75 hover:text-white hover:bg-white/7',
+              ]"
+              :aria-current="isActive(link.href) && link.href !== '#' ? 'page' : undefined"
               @click="closeMobileMenu"
             >
               {{ link.label }}
-            </a>
-            <a href="#" class="text-white/75 text-base font-medium px-4 py-3 rounded-md hover:text-white hover:bg-white/7 transition-all" @click="closeMobileMenu">
-              Lainnya
-            </a>
+            </Link>
 
+            <!-- Auth -->
             <div class="flex gap-3 mt-4 pt-5 border-t border-white/8">
-              <Link :href="route('login')" class="flex-1 text-center border border-white/25 text-white text-sm font-medium py-2.5 rounded-md hover:bg-white/7 transition-all">
+              <Link
+                :href="route('login')"
+                class="flex-1 text-center border border-white/25 text-white text-sm font-medium py-2.5 rounded-md hover:bg-white/7 transition-all"
+                @click="closeMobileMenu"
+              >
                 Masuk
               </Link>
-              <Link :href="route('register')" class="flex-1 text-center bg-teal text-white text-sm font-semibold py-2.5 rounded-md hover:bg-teal-dark transition-all">
+              <Link
+                :href="route('register')"
+                class="flex-1 text-center bg-teal text-white text-sm font-semibold py-2.5 rounded-md hover:bg-teal-dark transition-all"
+                @click="closeMobileMenu"
+              >
                 Daftar
               </Link>
             </div>
