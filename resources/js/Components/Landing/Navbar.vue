@@ -2,7 +2,7 @@
 import { Link, usePage } from '@inertiajs/vue3'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
-// Prop to force transparent mode (e.g. on hero pages)
+// Prop masih ada untuk backward compat, tapi sekarang auto-detect dari URL
 const props = withDefaults(defineProps<{
   transparent?: boolean
 }>(), {
@@ -13,10 +13,23 @@ const isScrolled = ref(false)
 const isMobileMenuOpen = ref(false)
 const page = usePage()
 
-// Active route helper
+// Halaman yang navbar-nya mulai transparan (ada hero image/gradient di belakang)
+const transparentRoutes = ['/', '/about', '/flights/search']
+
 const currentRoute = computed(() => page.url)
 
+// Auto-transparan kalau route cocok ATAU prop transparent=true di-pass manual
+const shouldBeTransparent = computed(() =>
+  props.transparent || transparentRoutes.some(r =>
+    r === '/' ? currentRoute.value === '/' : currentRoute.value.startsWith(r)
+  )
+)
+
+// Navbar solid kalau sudah di-scroll atau bukan halaman transparan
+const isSolid = computed(() => isScrolled.value || !shouldBeTransparent.value)
+
 function isActive(href: string) {
+  if (href === '/') return currentRoute.value === '/'
   return currentRoute.value === href || currentRoute.value.startsWith(href + '/')
 }
 
@@ -41,6 +54,8 @@ function handleKeydown(e: KeyboardEvent) {
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
   window.addEventListener('keydown', handleKeydown)
+  // Init saat mount (penting kalau page di-refresh dalam posisi sudah ter-scroll)
+  isScrolled.value = window.scrollY > 60
 })
 
 onUnmounted(() => {
@@ -49,13 +64,12 @@ onUnmounted(() => {
   document.body.style.overflow = ''
 })
 
-// Nav links — pakai route name untuk Inertia Link
+// Nav links — Panduan → FAQ, hapus Dukungan
 const navLinks = [
-  { label: 'Beranda',      routeName: 'home',           href: '/' },
-  { label: 'Tentang Kami', routeName: 'about',          href: '/about' },
-  { label: 'Penerbangan',  routeName: 'flights.search', href: '/flights/search' },
-  { label: 'Panduan',      routeName: null,             href: '#' },
-  { label: 'Dukungan',     routeName: 'faq',            href: '/faq' },
+  { label: 'Beranda',      href: '/' },
+  { label: 'Tentang Kami', href: '/about' },
+  { label: 'Penerbangan',  href: '/flights/search' },
+  { label: 'Panduan',      href: '/faq' },
 ]
 </script>
 
@@ -64,11 +78,9 @@ const navLinks = [
   <nav
     :class="[
       'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-      // When transparent mode & not scrolled: fully see-through
-      props.transparent && !isScrolled
-        ? 'bg-transparent border-b border-white/10'
-        : 'bg-navy border-b border-white/5',
-      isScrolled ? 'shadow-2xl backdrop-blur-md bg-navy/95' : '',
+      isSolid
+        ? 'bg-navy/95 border-b border-white/5 shadow-2xl backdrop-blur-md'
+        : 'bg-transparent border-b border-white/10',
     ]"
     aria-label="Menu utama"
   >
@@ -101,11 +113,11 @@ const navLinks = [
             :href="link.href"
             :class="[
               'text-sm font-medium px-3 py-1.5 rounded-md transition-all',
-              isActive(link.href) && link.href !== '#'
+              isActive(link.href)
                 ? 'text-white bg-white/12'
                 : 'text-white/75 hover:text-white hover:bg-white/7',
             ]"
-            :aria-current="isActive(link.href) && link.href !== '#' ? 'page' : undefined"
+            :aria-current="isActive(link.href) ? 'page' : undefined"
           >
             {{ link.label }}
           </Link>
@@ -195,11 +207,11 @@ const navLinks = [
               :href="link.href"
               :class="[
                 'text-base font-medium px-4 py-3 rounded-md transition-all',
-                isActive(link.href) && link.href !== '#'
+                isActive(link.href)
                   ? 'text-white bg-white/12'
                   : 'text-white/75 hover:text-white hover:bg-white/7',
               ]"
-              :aria-current="isActive(link.href) && link.href !== '#' ? 'page' : undefined"
+              :aria-current="isActive(link.href) ? 'page' : undefined"
               @click="closeMobileMenu"
             >
               {{ link.label }}

@@ -15,8 +15,8 @@ import AboutCTA from '@/Components/Landing/AboutCTA.vue'
   <div class="min-h-screen bg-white font-sans">
     <Navbar />
 
-    <!-- pt-16 untuk offset fixed navbar -->
-    <main class="pt-16">
+    <!-- Navbar transparan overlay, tidak perlu pt-16 -->
+    <main>
       <AboutHero />
       <AboutStory />
       <AboutStats />
