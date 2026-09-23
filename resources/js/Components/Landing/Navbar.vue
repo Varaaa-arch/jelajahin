@@ -1,36 +1,45 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import AuthModal from '@/Components/AuthModal.vue'
 
-// Prop masih ada untuk backward compat, tapi sekarang auto-detect dari URL
 const props = withDefaults(defineProps<{
   transparent?: boolean
 }>(), {
   transparent: false,
 })
 
-const isScrolled = ref(false)
-const isMobileMenuOpen = ref(false)
+const isScrolled        = ref(false)
+const isMobileMenuOpen  = ref(false)
+const showAuthModal     = ref(false)
+const authModalTab      = ref<'login' | 'register'>('login')
 const page = usePage()
 
-// Halaman yang navbar-nya mulai transparan (ada hero image/gradient di belakang)
 const transparentRoutes = ['/', '/about', '/flights/search']
-
 const currentRoute = computed(() => page.url)
 
-// Auto-transparan kalau route cocok ATAU prop transparent=true di-pass manual
 const shouldBeTransparent = computed(() =>
   props.transparent || transparentRoutes.some(r =>
     r === '/' ? currentRoute.value === '/' : currentRoute.value.startsWith(r)
   )
 )
-
-// Navbar solid kalau sudah di-scroll atau bukan halaman transparan
 const isSolid = computed(() => isScrolled.value || !shouldBeTransparent.value)
 
 function isActive(href: string) {
   if (href === '/') return currentRoute.value === '/'
   return currentRoute.value === href || currentRoute.value.startsWith(href + '/')
+}
+
+function openAuth(tab: 'login' | 'register') {
+  authModalTab.value = tab
+  showAuthModal.value = true
+  isMobileMenuOpen.value = false
+  document.body.style.overflow = 'hidden'
+}
+
+function closeAuth() {
+  showAuthModal.value = false
+  document.body.style.overflow = ''
 }
 
 function handleScroll() {
@@ -48,13 +57,15 @@ function closeMobileMenu() {
 }
 
 function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape' && isMobileMenuOpen.value) closeMobileMenu()
+  if (e.key === 'Escape') {
+    if (showAuthModal.value) closeAuth()
+    else if (isMobileMenuOpen.value) closeMobileMenu()
+  }
 }
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
   window.addEventListener('keydown', handleKeydown)
-  // Init saat mount (penting kalau page di-refresh dalam posisi sudah ter-scroll)
   isScrolled.value = window.scrollY > 60
 })
 
@@ -64,7 +75,6 @@ onUnmounted(() => {
   document.body.style.overflow = ''
 })
 
-// Nav links — Panduan → FAQ, hapus Dukungan
 const navLinks = [
   { label: 'Beranda',      href: '/' },
   { label: 'Tentang Kami', href: '/about' },
@@ -125,18 +135,20 @@ const navLinks = [
 
         <!-- Auth buttons (desktop) -->
         <div class="hidden md:flex items-center gap-2.5 ml-2">
-          <Link
-            :href="route('login')"
+          <button
+            type="button"
             class="border border-white/25 text-white text-sm font-medium px-4 py-1.5 rounded-md hover:bg-white/7 hover:border-white/40 transition-all"
+            @click="openAuth('login')"
           >
             Masuk
-          </Link>
-          <Link
-            :href="route('register')"
+          </button>
+          <button
+            type="button"
             class="bg-teal text-white text-sm font-semibold px-5 py-1.5 rounded-md hover:bg-teal-dark transition-all shadow-lg shadow-teal/20 hover:-translate-y-px"
+            @click="openAuth('register')"
           >
             Daftar
-          </Link>
+          </button>
         </div>
 
         <!-- Hamburger (mobile) -->
@@ -219,27 +231,33 @@ const navLinks = [
 
             <!-- Auth -->
             <div class="flex gap-3 mt-4 pt-5 border-t border-white/8">
-              <Link
-                :href="route('login')"
+              <button
+                type="button"
                 class="flex-1 text-center border border-white/25 text-white text-sm font-medium py-2.5 rounded-md hover:bg-white/7 transition-all"
-                @click="closeMobileMenu"
+                @click="openAuth('login')"
               >
                 Masuk
-              </Link>
-              <Link
-                :href="route('register')"
+              </button>
+              <button
+                type="button"
                 class="flex-1 text-center bg-teal text-white text-sm font-semibold py-2.5 rounded-md hover:bg-teal-dark transition-all"
-                @click="closeMobileMenu"
+                @click="openAuth('register')"
               >
                 Daftar
-              </Link>
+              </button>
             </div>
           </div>
         </Transition>
       </div>
     </Transition>
   </Teleport>
-</template>
+
+  <!-- Auth Modal -->
+  <AuthModal
+    :show="showAuthModal"
+    :initial-tab="authModalTab"
+    @close="closeAuth"
+  /></template>
 
 <style scoped>
 .fade-enter-active, .fade-leave-active { transition: opacity 0.25s ease; }
