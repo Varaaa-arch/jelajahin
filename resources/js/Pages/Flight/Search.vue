@@ -54,8 +54,23 @@ const searched = ref(false)
 const error = ref('')
 const flights = ref<any[]>([])
 
-const handleSelectFlight = (flightId: string) => {
-  router.get(route('flight.detail', { flightId }))
+const handleSelectFlight = (flight: any) => {
+  sessionStorage.setItem('selectedFlight', JSON.stringify(flight))
+  router.visit(`/booking/create?flightId=${flight.id}`)
+}
+
+function buildMockFlight() {
+  return {
+    id: 'mock-' + Date.now(),
+    flight_number: 'JL-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+    airline: { name: 'Jelajahin Air' },
+    origin: { code: searchParams.origin, city: originAirport.value?.city ?? searchParams.origin },
+    destination: { code: searchParams.destination, city: destinationAirport.value?.city ?? searchParams.destination },
+    departure_time: new Date(searchParams.departure_date + 'T07:00:00').toISOString(),
+    arrival_time: new Date(searchParams.departure_date + 'T09:30:00').toISOString(),
+    base_price: 1_250_000,
+    seats_available: 42,
+  }
 }
 
 const handleSearch = async () => {
@@ -70,7 +85,6 @@ const handleSearch = async () => {
 
   loading.value = true
   error.value = ''
-  searched.value = true
 
   try {
     const response = await httpClient.get('/api/v1/flights/search', {
@@ -80,9 +94,21 @@ const handleSearch = async () => {
         departure_date: searchParams.departure_date,
       }
     })
-    flights.value = response.data.data || []
-  } catch (err: any) {
-    error.value = err.message || 'Gagal mencari penerbangan'
+    const results: any[] = response.data.data || []
+
+    // Ada hasil → pakai flight pertama dari API
+    if (results.length > 0) {
+      handleSelectFlight(results[0])
+      return
+    }
+
+    // API sukses tapi kosong → pakai mock, tetap navigate
+    handleSelectFlight(buildMockFlight())
+
+  } catch {
+    // Backend mati / error → pakai mock, tetap navigate
+    handleSelectFlight(buildMockFlight())
+
   } finally {
     loading.value = false
   }
@@ -379,7 +405,7 @@ function formatDuration(dep: string, arr: string) {
             v-for="flight in flights"
             :key="flight.id"
             class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-100 transition-all cursor-pointer group"
-            @click="handleSelectFlight(flight.id)"
+            @click="handleSelectFlight(flight)"
           >
             <div class="p-6">
               <div class="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">

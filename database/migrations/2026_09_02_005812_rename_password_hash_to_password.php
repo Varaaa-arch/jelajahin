@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('password', function (Blueprint $table) {
+        Schema::tabcle('password', function (Blueprint $table) {
             //
         });
     }
