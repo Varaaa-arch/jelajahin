@@ -2,6 +2,13 @@
 import { Link, usePage } from '@inertiajs/vue3'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
+// Prop to force transparent mode (e.g. on hero pages)
+const props = withDefaults(defineProps<{
+  transparent?: boolean
+}>(), {
+  transparent: false,
+})
+
 const isScrolled = ref(false)
 const isMobileMenuOpen = ref(false)
 const page = usePage()
@@ -57,7 +64,10 @@ const navLinks = [
   <nav
     :class="[
       'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-      'bg-navy border-b border-white/5',
+      // When transparent mode & not scrolled: fully see-through
+      props.transparent && !isScrolled
+        ? 'bg-transparent border-b border-white/10'
+        : 'bg-navy border-b border-white/5',
       isScrolled ? 'shadow-2xl backdrop-blur-md bg-navy/95' : '',
     ]"
     aria-label="Menu utama"
