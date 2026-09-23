@@ -51,11 +51,11 @@ onUnmounted(() => {
 
 // Nav links — pakai route name untuk Inertia Link
 const navLinks = [
-  { label: 'Beranda',      routeName: 'home',    href: '/' },
-  { label: 'Tentang Kami', routeName: 'about',   href: '/about' },
+  { label: 'Beranda',      routeName: 'home',           href: '/' },
+  { label: 'Tentang Kami', routeName: 'about',          href: '/about' },
   { label: 'Penerbangan',  routeName: 'flights.search', href: '/flights/search' },
-  { label: 'Panduan',      routeName: null,      href: '#' },
-  { label: 'Dukungan',     routeName: null,      href: '#' },
+  { label: 'Panduan',      routeName: null,             href: '#' },
+  { label: 'Dukungan',     routeName: 'faq',            href: '/faq' },
 ]
 </script>
 

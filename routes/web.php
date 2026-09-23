@@ -23,6 +23,10 @@ Route::get('/flights/search', function () {
     return Inertia::render('Flight/Search');
 })->name('flights.search');
 
+Route::get('/faq', function () {
+    return Inertia::render('FAQ');
+})->name('faq');
+
 Route::get('/flights/{flightId}', function (string $flightId) {
     return Inertia::render('Flight/Detail', [
         'flightId' => $flightId,
