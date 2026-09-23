@@ -287,7 +287,7 @@ function selectSearchResult(catId: string, q: string) {
               <!-- Buttons -->
               <div class="flex flex-col sm:flex-row gap-3 shrink-0">
                 <a
-                  href="mailto:support@jelajahin.com"
+                  href="/contact"
                   class="flex items-center gap-2 px-5 py-3 bg-teal hover:bg-teal-dark text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-teal/25 hover:-translate-y-px"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

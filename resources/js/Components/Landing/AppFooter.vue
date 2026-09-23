@@ -1,9 +1,9 @@
 <script setup lang="ts">
 const footerLinks = {
   perusahaan: [
-    { label: 'Tentang Kami', href: '#' },
-    { label: 'Syarat & Ketentuan', href: '#' },
-    { label: 'Kebijakan Privasi', href: '#' },
+    { label: 'Tentang Kami', href: '/about' },
+    { label: 'Syarat & Ketentuan', href: '/terms' },
+    { label: 'Kebijakan Privasi', href: '/privacy' },
   ],
   produk: [
     { label: 'Tiket Pesawat', href: '#' },
@@ -13,11 +13,11 @@ const footerLinks = {
     { label: 'Atraksi & Aktivitas', href: '#' },
   ],
   layanan: [
-    { label: 'Pusat Bantuan', href: '#' },
+    { label: 'Pusat Bantuan', href: '/faq' },
     { label: 'Promo Hari Ini', href: '#' },
     { label: 'PayLater', href: '#' },
     { label: 'Cek Pesanan', href: '#' },
-    { label: 'Kontak Pelanggan', href: '#' },
+    { label: 'Kontak Pelanggan', href: '/contact' },
   ],
 }
 </script>

@@ -27,6 +27,18 @@ Route::get('/faq', function () {
     return Inertia::render('FAQ');
 })->name('faq');
 
+Route::get('/contact', function () {
+    return Inertia::render('Contact');
+})->name('contact');
+
+Route::get('/terms', function () {
+    return Inertia::render('Terms');
+})->name('terms');
+
+Route::get('/privacy', function () {
+    return Inertia::render('Privacy');
+})->name('privacy');
+
 Route::get('/flights/{flightId}', function (string $flightId) {
     return Inertia::render('Flight/Detail', [
         'flightId' => $flightId,
