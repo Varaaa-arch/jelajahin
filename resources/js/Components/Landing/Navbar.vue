@@ -103,7 +103,7 @@ const navLinks = [
         </Link>
 
         <!-- Search pill (desktop) -->
-        <div class="hidden md:flex items-center gap-2 bg-white/8 border border-white/10 rounded-full px-4 py-2 w-52 hover:bg-white/12 hover:border-white/20 transition-all">
+        <div class="hidden md:flex flex-1 items-center gap-2 bg-white/8 border border-white/10 rounded-full px-4 py-2 max-w-sm hover:bg-white/12 hover:border-white/20 transition-all">
           <svg class="w-4 h-4 text-white/40 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
           </svg>
@@ -116,7 +116,7 @@ const navLinks = [
         </div>
 
         <!-- Nav links (desktop) -->
-        <nav class="hidden lg:flex items-center gap-1 ml-auto" aria-label="Navigasi utama">
+        <nav class="hidden lg:flex items-center gap-1" aria-label="Navigasi utama">
           <Link
             v-for="link in navLinks"
             :key="link.label"
