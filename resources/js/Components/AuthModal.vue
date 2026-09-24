@@ -113,7 +113,7 @@ function handleKeydown(e: KeyboardEvent) {
         >
           <div
             v-if="show"
-            class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+            class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-y-auto max-h-[90dvh] scrollbar-hide"
             @click.stop
           >
             <!-- Close button -->
@@ -129,26 +129,26 @@ function handleKeydown(e: KeyboardEvent) {
             </button>
 
             <!-- Header -->
-            <div class="px-8 pt-8 pb-0 text-center">
+            <div class="px-8 pt-6 pb-0 text-center">
               <!-- Logo icon -->
-              <div class="w-12 h-12 bg-teal rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-teal/30">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <div class="w-10 h-10 bg-teal rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-teal/30">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19.5 2.5c-1.5-1.5-3.5-1.5-5 0L11 6 2.8 4.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 5.2 6.3c.3.4.8.5 1.3.3l.5-.3c.4-.2.6-.6.5-1.1z"/>
                 </svg>
               </div>
-              <h2 class="text-xl font-black text-gray-900">
+              <h2 class="text-lg font-black text-gray-900">
                 {{ activeTab === 'login' ? 'Selamat datang kembali' : 'Buat akun baru' }}
               </h2>
-              <p class="text-sm text-gray-400 mt-1 mb-5">
+              <p class="text-sm text-gray-400 mt-0.5 mb-4">
                 {{ activeTab === 'login' ? 'Masuk ke akun Jelajahin Anda' : 'Bergabung dan mulai menjelajah' }}
               </p>
 
               <!-- Tabs -->
-              <div class="flex bg-gray-100 rounded-xl p-1 mb-6">
+              <div class="flex bg-gray-100 rounded-xl p-1 mb-4">
                 <button
                   type="button"
                   :class="[
-                    'flex-1 py-2 text-sm font-bold rounded-lg transition-all',
+                    'flex-1 py-1.5 text-sm font-bold rounded-lg transition-all',
                     activeTab === 'login'
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-500 hover:text-gray-700',
@@ -160,7 +160,7 @@ function handleKeydown(e: KeyboardEvent) {
                 <button
                   type="button"
                   :class="[
-                    'flex-1 py-2 text-sm font-bold rounded-lg transition-all',
+                    'flex-1 py-1.5 text-sm font-bold rounded-lg transition-all',
                     activeTab === 'register'
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-500 hover:text-gray-700',
@@ -173,8 +173,8 @@ function handleKeydown(e: KeyboardEvent) {
             </div>
 
             <!-- ── LOGIN FORM ─────────────────────────────────────────────── -->
-            <div v-if="activeTab === 'login'" class="px-8 pb-8">
-              <form class="space-y-4" @submit.prevent="submitLogin">
+            <div v-if="activeTab === 'login'" class="px-8 pb-6">
+              <form class="space-y-3" @submit.prevent="submitLogin">
 
                 <!-- Email -->
                 <div>
@@ -189,7 +189,7 @@ function handleKeydown(e: KeyboardEvent) {
                     autocomplete="email"
                     required
                     :class="[
-                      'w-full px-4 py-3 rounded-xl border text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal transition-all',
+                      'w-full px-4 py-2.5 rounded-xl border text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal transition-all',
                       loginForm.errors.email ? 'border-red-300 bg-red-50' : 'border-gray-200',
                     ]"
                   />
@@ -213,7 +213,7 @@ function handleKeydown(e: KeyboardEvent) {
                       autocomplete="current-password"
                       required
                       :class="[
-                        'w-full px-4 py-3 pr-11 rounded-xl border text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal transition-all',
+                        'w-full px-4 py-2.5 pr-11 rounded-xl border text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal transition-all',
                         loginForm.errors.password ? 'border-red-300 bg-red-50' : 'border-gray-200',
                       ]"
                     />
@@ -248,7 +248,7 @@ function handleKeydown(e: KeyboardEvent) {
                 <button
                   type="submit"
                   :disabled="loginForm.processing"
-                  class="w-full flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm py-3.5 rounded-xl transition-all shadow-lg shadow-teal/25 hover:-translate-y-px"
+                  class="w-full flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm py-3 rounded-xl transition-all shadow-lg shadow-teal/25 hover:-translate-y-px"
                 >
                   <svg v-if="loginForm.processing" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -258,10 +258,52 @@ function handleKeydown(e: KeyboardEvent) {
                 </button>
 
                 <!-- Divider -->
-                <div class="flex items-center gap-3 my-1">
+                <div class="flex items-center gap-3 my-0.5">
                   <div class="flex-1 h-px bg-gray-100"/>
                   <span class="text-xs text-gray-400">atau</span>
                   <div class="flex-1 h-px bg-gray-100"/>
+                </div>
+
+                <!-- Social login buttons -->
+                <div class="grid grid-cols-3 gap-2.5">
+                  <!-- Google -->
+                  <a
+                    :href="route('social.redirect', { provider: 'google' })"
+                    class="flex flex-col items-center justify-center gap-1.5 py-2 px-2 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all group"
+                    aria-label="Masuk dengan Google"
+                  >
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    </svg>
+                    <span class="text-[10px] font-semibold text-gray-500 group-hover:text-gray-700 transition-colors">Google</span>
+                  </a>
+
+                  <!-- Facebook -->
+                  <a
+                    :href="route('social.redirect', { provider: 'facebook' })"
+                    class="flex flex-col items-center justify-center gap-1.5 py-2 px-2 rounded-xl border border-gray-200 hover:border-[#1877F2]/30 hover:bg-blue-50/50 transition-all group"
+                    aria-label="Masuk dengan Facebook"
+                  >
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" fill="#1877F2"/>
+                    </svg>
+                    <span class="text-[10px] font-semibold text-gray-500 group-hover:text-[#1877F2] transition-colors">Facebook</span>
+                  </a>
+
+                  <!-- TikTok -->
+                  <a
+                    :href="route('social.redirect', { provider: 'tiktok' })"
+                    class="flex flex-col items-center justify-center gap-1.5 py-2 px-2 rounded-xl border border-gray-200 hover:border-gray-800 hover:bg-gray-900/5 transition-all group"
+                    aria-label="Masuk dengan TikTok"
+                  >
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.53V6.75a4.86 4.86 0 01-1-.06z" fill="currentColor" class="text-gray-800 group-hover:text-gray-900"/>
+                    </svg>
+                    <span class="text-[10px] font-semibold text-gray-500 group-hover:text-gray-900 transition-colors">TikTok</span>
+                  </a>
                 </div>
 
                 <!-- Switch to register -->
@@ -276,8 +318,8 @@ function handleKeydown(e: KeyboardEvent) {
             </div>
 
             <!-- ── REGISTER FORM ──────────────────────────────────────────── -->
-            <div v-else-if="activeTab === 'register'" class="px-8 pb-8">
-              <form class="space-y-4" @submit.prevent="submitRegister">
+            <div v-else-if="activeTab === 'register'" class="px-8 pb-6">
+              <form class="space-y-3" @submit.prevent="submitRegister">
 
                 <!-- Name -->
                 <div>
@@ -292,7 +334,7 @@ function handleKeydown(e: KeyboardEvent) {
                     autocomplete="name"
                     required
                     :class="[
-                      'w-full px-4 py-3 rounded-xl border text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal transition-all',
+                      'w-full px-4 py-2.5 rounded-xl border text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal transition-all',
                       registerForm.errors.name ? 'border-red-300 bg-red-50' : 'border-gray-200',
                     ]"
                   />
@@ -312,7 +354,7 @@ function handleKeydown(e: KeyboardEvent) {
                     autocomplete="email"
                     required
                     :class="[
-                      'w-full px-4 py-3 rounded-xl border text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal transition-all',
+                      'w-full px-4 py-2.5 rounded-xl border text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal transition-all',
                       registerForm.errors.email ? 'border-red-300 bg-red-50' : 'border-gray-200',
                     ]"
                   />
@@ -333,7 +375,7 @@ function handleKeydown(e: KeyboardEvent) {
                       autocomplete="new-password"
                       required
                       :class="[
-                        'w-full px-4 py-3 pr-11 rounded-xl border text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal transition-all',
+                        'w-full px-4 py-2.5 pr-11 rounded-xl border text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal transition-all',
                         registerForm.errors.password ? 'border-red-300 bg-red-50' : 'border-gray-200',
                       ]"
                     />
@@ -367,7 +409,7 @@ function handleKeydown(e: KeyboardEvent) {
                       autocomplete="new-password"
                       required
                       :class="[
-                        'w-full px-4 py-3 pr-11 rounded-xl border text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal transition-all',
+                        'w-full px-4 py-2.5 pr-11 rounded-xl border text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal transition-all',
                         registerForm.errors.password_confirmation ? 'border-red-300 bg-red-50' : 'border-gray-200',
                       ]"
                     />
@@ -391,7 +433,7 @@ function handleKeydown(e: KeyboardEvent) {
                 <button
                   type="submit"
                   :disabled="registerForm.processing"
-                  class="w-full flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm py-3.5 rounded-xl transition-all shadow-lg shadow-teal/25 hover:-translate-y-px"
+                  class="w-full flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm py-3 rounded-xl transition-all shadow-lg shadow-teal/25 hover:-translate-y-px"
                 >
                   <svg v-if="registerForm.processing" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -401,10 +443,52 @@ function handleKeydown(e: KeyboardEvent) {
                 </button>
 
                 <!-- Divider -->
-                <div class="flex items-center gap-3 my-1">
+                <div class="flex items-center gap-3 my-0.5">
                   <div class="flex-1 h-px bg-gray-100"/>
                   <span class="text-xs text-gray-400">atau</span>
                   <div class="flex-1 h-px bg-gray-100"/>
+                </div>
+
+                <!-- Social register buttons -->
+                <div class="grid grid-cols-3 gap-2.5">
+                  <!-- Google -->
+                  <a
+                    :href="route('social.redirect', { provider: 'google' })"
+                    class="flex flex-col items-center justify-center gap-1.5 py-2 px-2 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all group"
+                    aria-label="Daftar dengan Google"
+                  >
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    </svg>
+                    <span class="text-[10px] font-semibold text-gray-500 group-hover:text-gray-700 transition-colors">Google</span>
+                  </a>
+
+                  <!-- Facebook -->
+                  <a
+                    :href="route('social.redirect', { provider: 'facebook' })"
+                    class="flex flex-col items-center justify-center gap-1.5 py-2 px-2 rounded-xl border border-gray-200 hover:border-[#1877F2]/30 hover:bg-blue-50/50 transition-all group"
+                    aria-label="Daftar dengan Facebook"
+                  >
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" fill="#1877F2"/>
+                    </svg>
+                    <span class="text-[10px] font-semibold text-gray-500 group-hover:text-[#1877F2] transition-colors">Facebook</span>
+                  </a>
+
+                  <!-- TikTok -->
+                  <a
+                    :href="route('social.redirect', { provider: 'tiktok' })"
+                    class="flex flex-col items-center justify-center gap-1.5 py-2 px-2 rounded-xl border border-gray-200 hover:border-gray-800 hover:bg-gray-900/5 transition-all group"
+                    aria-label="Daftar dengan TikTok"
+                  >
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.53V6.75a4.86 4.86 0 01-1-.06z" fill="currentColor" class="text-gray-800 group-hover:text-gray-900"/>
+                    </svg>
+                    <span class="text-[10px] font-semibold text-gray-500 group-hover:text-gray-900 transition-colors">TikTok</span>
+                  </a>
                 </div>
 
                 <!-- Switch to login -->
@@ -424,3 +508,8 @@ function handleKeydown(e: KeyboardEvent) {
     </Transition>
   </Teleport>
 </template>
+
+<style scoped>
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
