@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\OtpController;
+use App\Http\Controllers\Auth\PasswordResetOtpController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -25,3 +28,10 @@ Route::prefix('payments')->group(function () {
     Route::post('/webhook', [\App\Http\Controllers\PaymentController::class, 'webhookCallback']);
     Route::get('/{transactionId}', [\App\Http\Controllers\PaymentController::class, 'getPaymentStatus']);
 });
+
+// ─── OTP & Password Reset (digunakan frontend + test) ─────────────────────
+Route::post('otp/send', [OtpController::class, 'send']);
+Route::post('otp/verify', [OtpController::class, 'verify']);
+Route::post('forgot-password', [PasswordResetOtpController::class, 'store']);
+Route::post('forgot-password/otp', [PasswordResetOtpController::class, 'verify']);
+Route::post('password/reset', [NewPasswordController::class, 'store']);

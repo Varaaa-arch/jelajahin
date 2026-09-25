@@ -55,6 +55,9 @@ class OtpController extends Controller
             ], 429);
         }
 
+        // Hapus OTP lama untuk email ini, lalu buat yang baru
+        OtpCode::where('email', $request->email)->delete();
+
         $otp = OtpCode::generateFor($request->email);
         $user->notify(new OtpNotification($otp->code, $user->name));
 
@@ -94,7 +97,7 @@ class OtpController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if ($user && ! $user->email_verified_at) {
-            $user->update(['email_verified_at' => now()]);
+            $user->markEmailAsVerified();
         }
 
         return response()->json([

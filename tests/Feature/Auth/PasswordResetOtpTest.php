@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Tests\TestCase;
@@ -137,7 +138,7 @@ class PasswordResetOtpTest extends TestCase
         ]);
 
         $resetResponse->assertRedirect(route('login'));
-        $this->assertTrue(Password::validate($user->fresh(), 'newSecurePassword123!'));
+        $this->assertTrue(Hash::check('newSecurePassword123!', $user->fresh()->password));
     }
 
     public function test_otp_code_is_6_digits(): void

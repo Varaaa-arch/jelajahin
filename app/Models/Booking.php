@@ -43,4 +43,19 @@ class Booking extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function payment(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function invoice(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    public function etickets(): HasMany
+    {
+        return $this->hasMany(ETicket::class);
+    }
 }

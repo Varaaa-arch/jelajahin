@@ -45,6 +45,9 @@ class PasswordResetOtpController extends Controller
             ], 429);
         }
 
+        // Hapus OTP lama untuk email ini, lalu buat yang baru
+        OtpCode::where('email', $request->email)->delete();
+
         $otp = OtpCode::generateFor($request->email);
         $user->notify(new PasswordResetOtpNotification($otp->code, $user->name));
 

@@ -44,13 +44,11 @@ class OtpCode extends Model
 
     /**
      * Generate a new OTP for an email.
-     * Deletes all previous unused OTPs for that email first.
+     * OTP lama dibiarkan agar rate-limit bisa dihitung dari jumlah record;
+     * pembersihan OTP lama dilakukan oleh flow pengiriman (controller).
      */
     public static function generateFor(string $email): self
     {
-        // Hapus OTP lama untuk email ini
-        static::where('email', $email)->delete();
-
         return static::create([
             'email'      => $email,
             'code'       => str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT),

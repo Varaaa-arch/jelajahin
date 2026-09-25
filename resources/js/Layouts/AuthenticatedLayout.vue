@@ -1,196 +1,320 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
+import { onMounted, onUnmounted, ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
-import NavLink from '@/Components/NavLink.vue';
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-import { Link } from '@inertiajs/vue3';
 
-const showingNavigationDropdown = ref(false);
+const showingSidebar = ref(false);
+const activeLink = ref('dashboard');
+
+interface LinkItem {
+    key: string;
+    label: string;
+    href: string;
+    hash?: string;
+    icon: string;
+}
+
+const navLinks: LinkItem[] = [
+    {
+        key: 'dashboard',
+        label: 'Dashboard',
+        href: '/dashboard',
+        icon: 'M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3a1 1 0 001-1v-4h6v4a1 1 0 001 1h3a1 1 0 001-1V10',
+    },
+    {
+        key: 'pemesanan',
+        label: 'Pemesanan Saya',
+        href: '/dashboard',
+        hash: '#pemesanan',
+        icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+    },
+    {
+        key: 'eticket',
+        label: 'E-Ticket & Invoice',
+        href: '/dashboard',
+        hash: '#eticket',
+        icon: 'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a1 1 0 110 2v3a2 2 0 002 2h14a2 2 0 002-2v-3a1 1 0 110-2V7a2 2 0 00-2-2H5zM8.5 12h.01M12 12h.01M15.5 12h.01',
+    },
+    {
+        key: 'profil',
+        label: 'Profil',
+        href: '/profile',
+        icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+    },
+];
+
+function syncActiveLink(): void {
+    const hash = window.location.hash;
+    const path = window.location.pathname;
+
+    if (hash === '#pemesanan') {
+        activeLink.value = 'pemesanan';
+    } else if (hash === '#eticket') {
+        activeLink.value = 'eticket';
+    } else if (path === '/dashboard') {
+        activeLink.value = 'dashboard';
+    } else if (path.startsWith('/profile')) {
+        activeLink.value = 'profil';
+    }
+}
+
+onMounted(() => {
+    syncActiveLink();
+    window.addEventListener('hashchange', syncActiveLink);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('hashchange', syncActiveLink);
+});
 </script>
 
 <template>
-    <div>
-        <div class="min-h-screen bg-gray-100">
-            <nav
-                class="border-b border-gray-100 bg-white"
-            >
-                <!-- Primary Navigation Menu -->
-                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div class="flex h-16 justify-between">
-                        <div class="flex">
-                            <!-- Logo -->
-                            <div class="flex shrink-0 items-center">
-                                <Link :href="route('dashboard')">
-                                    <ApplicationLogo
-                                        class="block h-9 w-auto fill-current text-gray-800"
-                                    />
-                                </Link>
-                            </div>
+    <div class="min-h-screen bg-gray-50">
+        <!-- Sidebar (desktop) -->
+        <aside
+            class="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-navy lg:flex"
+        >
+            <div class="flex h-16 items-center gap-3 border-b border-white/10 px-5">
+                <div
+                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-teal shadow-lg shadow-gray-900/10"
+                >
+                    <svg
+                        class="h-5 w-5 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19.5 2.5c-1.5-1.5-3.5-1.5-5 0L11 6 2.8 4.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 5.2 6.3c.3.4.8.5 1.3.3l.5-.3c.4-.2.6-.6.5-1.1z"
+                        />
+                    </svg>
+                </div>
+                <span class="text-xl font-black tracking-tight text-white">Jelajahin</span>
+            </div>
 
-                            <!-- Navigation Links -->
-                            <div
-                                class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
+            <nav class="flex-1 space-y-1 px-3 py-5">
+                <span class="px-3 pb-2 text-[11px] font-bold uppercase tracking-widest text-white/40">
+                    Menu
+                </span>
+                <Link
+                    v-for="item in navLinks"
+                    :key="item.key"
+                    :href="item.href + (item.hash ?? '')"
+                    class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition"
+                    :class="
+                        activeLink === item.key
+                            ? 'bg-teal text-white shadow-lg shadow-gray-900/10'
+                            : 'text-white/60 hover:bg-white/5 hover:text-white'
+                    "
+                >
+                    <svg
+                        class="h-5 w-5 shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            :d="item.icon"
+                        />
+                    </svg>
+                    {{ item.label }}
+                </Link>
+            </nav>
+
+            <div class="border-t border-white/10 p-3">
+                <Link
+                    href="/logout"
+                    method="post"
+                    as="button"
+                    class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/60 transition hover:bg-white/5 hover:text-white"
+                >
+                    <svg
+                        class="h-5 w-5 shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                        />
+                    </svg>
+                    Keluar
+                </Link>
+            </div>
+        </aside>
+
+        <!-- Mobile drawer -->
+        <div
+            v-if="showingSidebar"
+            class="fixed inset-0 z-40 lg:hidden"
+        >
+            <div
+                class="absolute inset-0 bg-navy/60 backdrop-blur-sm"
+                @click="showingSidebar = false"
+            />
+            <div class="absolute inset-y-0 left-0 flex w-72 flex-col bg-navy shadow-2xl">
+                <div class="flex h-16 items-center justify-between border-b border-white/10 px-5">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-teal shadow-lg shadow-gray-900/10"
+                        >
+                            <svg
+                                class="h-5 w-5 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                viewBox="0 0 24 24"
                             >
-                                <NavLink
-                                    :href="route('dashboard')"
-                                    :active="route().current('dashboard')"
-                                >
-                                    Dashboard
-                                </NavLink>
-                            </div>
+                                <path
+                                    d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19.5 2.5c-1.5-1.5-3.5-1.5-5 0L11 6 2.8 4.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 5.2 6.3c.3.4.8.5 1.3.3l.5-.3c.4-.2.6-.6.5-1.1z"
+                                />
+                            </svg>
                         </div>
+                        <span class="text-xl font-black tracking-tight text-white">Jelajahin</span>
+                    </div>
+                    <button
+                        type="button"
+                        class="rounded-lg p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
+                        @click="showingSidebar = false"
+                    >
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <nav class="flex-1 space-y-1 overflow-y-auto p-3">
+                    <Link
+                        v-for="item in navLinks"
+                        :key="item.key"
+                        :href="item.href + (item.hash ?? '')"
+                        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition"
+                        :class="
+                            activeLink === item.key
+                                ? 'bg-teal text-white shadow-lg shadow-gray-900/10'
+                                : 'text-white/60 hover:bg-white/5 hover:text-white'
+                        "
+                        @click="showingSidebar = false"
+                    >
+                        <svg
+                            class="h-5 w-5 shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                :d="item.icon"
+                            />
+                        </svg>
+                        {{ item.label }}
+                    </Link>
+                </nav>
+                <div class="border-t border-white/10 p-3">
+                    <Link
+                        href="/logout"
+                        method="post"
+                        as="button"
+                        class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/60 transition hover:bg-white/5 hover:text-white"
+                        @click="showingSidebar = false"
+                    >
+                        <svg
+                            class="h-5 w-5 shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                            />
+                        </svg>
+                        Keluar
+                    </Link>
+                </div>
+            </div>
+        </div>
 
-                        <div class="hidden sm:ms-6 sm:flex sm:items-center">
-                            <!-- Settings Dropdown -->
-                            <div class="relative ms-3">
-                                <Dropdown align="right" width="48">
-                                    <template #trigger>
-                                        <span class="inline-flex rounded-md">
-                                            <button
-                                                type="button"
-                                                class="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
-                                            >
-                                                {{ $page.props.auth.user.name }}
-
-                                                <svg
-                                                    class="-me-0.5 ms-2 h-4 w-4"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
-                                                >
-                                                    <path
-                                                        fill-rule="evenodd"
-                                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                        clip-rule="evenodd"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </span>
-                                    </template>
-
-                                    <template #content>
-                                        <DropdownLink
-                                            :href="route('profile.edit')"
-                                        >
-                                            Profile
-                                        </DropdownLink>
-                                        <DropdownLink
-                                            :href="route('logout')"
-                                            method="post"
-                                            as="button"
-                                        >
-                                            Log Out
-                                        </DropdownLink>
-                                    </template>
-                                </Dropdown>
-                            </div>
-                        </div>
-
-                        <!-- Hamburger -->
-                        <div class="-me-2 flex items-center sm:hidden">
-                            <button
-                                @click="
-                                    showingNavigationDropdown =
-                                        !showingNavigationDropdown
-                                "
-                                class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none"
-                            >
-                                <svg
-                                    class="h-6 w-6"
-                                    stroke="currentColor"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        :class="{
-                                            hidden: showingNavigationDropdown,
-                                            'inline-flex':
-                                                !showingNavigationDropdown,
-                                        }"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M4 6h16M4 12h16M4 18h16"
-                                    />
-                                    <path
-                                        :class="{
-                                            hidden: !showingNavigationDropdown,
-                                            'inline-flex':
-                                                showingNavigationDropdown,
-                                        }"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
+        <!-- Main column -->
+        <div class="lg:pl-64">
+            <!-- Top bar -->
+            <nav class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-gray-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8">
+                <div class="flex items-center gap-3">
+                    <button
+                        type="button"
+                        class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 lg:hidden"
+                        @click="showingSidebar = true"
+                    >
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <div class="flex items-center gap-2 text-sm">
+                        <span class="text-gray-400">Jelajahin</span>
+                        <svg class="h-4 w-4 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                        <span class="font-semibold text-gray-800">
+                            <slot name="header">
+                                Dashboard
+                            </slot>
+                        </span>
                     </div>
                 </div>
 
-                <!-- Responsive Navigation Menu -->
-                <div
-                    :class="{
-                        block: showingNavigationDropdown,
-                        hidden: !showingNavigationDropdown,
-                    }"
-                    class="sm:hidden"
-                >
-                    <div class="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink
-                            :href="route('dashboard')"
-                            :active="route().current('dashboard')"
-                        >
-                            Dashboard
-                        </ResponsiveNavLink>
-                    </div>
-
-                    <!-- Responsive Settings Options -->
-                    <div
-                        class="border-t border-gray-200 pb-1 pt-4"
-                    >
-                        <div class="px-4">
-                            <div
-                                class="text-base font-medium text-gray-800"
+                <div class="relative">
+                    <Dropdown align="right" width="48">
+                        <template #trigger>
+                            <button
+                                type="button"
+                                class="flex items-center gap-3 rounded-full p-1 pr-3 transition hover:bg-gray-100 focus:outline-none"
                             >
-                                {{ $page.props.auth.user.name }}
-                            </div>
-                            <div class="text-sm font-medium text-gray-500">
-                                {{ $page.props.auth.user.email }}
-                            </div>
-                        </div>
-
-                        <div class="mt-3 space-y-1">
-                            <ResponsiveNavLink :href="route('profile.edit')">
-                                Profile
-                            </ResponsiveNavLink>
-                            <ResponsiveNavLink
-                                :href="route('logout')"
+                                <span
+                                    class="flex h-9 w-9 items-center justify-center rounded-full bg-teal font-black uppercase text-white shadow-md shadow-gray-900/10"
+                                >
+                                    {{ $page.props.auth.user.name.charAt(0) }}
+                                </span>
+                                <span class="hidden text-left sm:block">
+                                    <span class="block text-sm font-bold text-gray-800">
+                                        {{ $page.props.auth.user.name }}
+                                    </span>
+                                    <span class="block text-xs text-gray-500">
+                                        Member Jelajahin
+                                    </span>
+                                </span>
+                                <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                        </template>
+                        <template #content>
+                            <DropdownLink :href="route('profile.edit')">
+                                Profil
+                            </DropdownLink>
+                            <DropdownLink
+                                href="/logout"
                                 method="post"
                                 as="button"
                             >
-                                Log Out
-                            </ResponsiveNavLink>
-                        </div>
-                    </div>
+                                Keluar
+                            </DropdownLink>
+                        </template>
+                    </Dropdown>
                 </div>
             </nav>
 
-            <!-- Page Heading -->
-            <header
-                class="bg-white shadow"
-                v-if="$slots.header"
-            >
-                <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                    <slot name="header" />
-                </div>
-            </header>
-
-            <!-- Page Content -->
-            <main>
+            <main class="px-4 py-8 sm:px-6 lg:px-8">
                 <slot />
             </main>
         </div>

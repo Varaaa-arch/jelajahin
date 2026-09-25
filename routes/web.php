@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -10,10 +11,6 @@ Route::get('/', function () {
         'canRegister' => Route::has('register'),
     ]);
 })->name('home');
-
-Route::get('/about', function () {
-    return Inertia::render('About');
-})->name('about');
 
 Route::get('/about', function () {
     return Inertia::render('About');
@@ -45,9 +42,9 @@ Route::get('/flights/{flightId}', function (string $flightId) {
     ]);
 })->name('flight.detail');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', DashboardController::class)
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::get('/booking/create', function () {
     return Inertia::render('Booking/Create', [
