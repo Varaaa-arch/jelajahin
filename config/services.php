@@ -54,4 +54,9 @@ return [
         'redirect'      => env('TIKTOK_REDIRECT_URI', '/auth/tiktok/callback'),
     ],
 
+    // ─── Go Seat Microservice ─────────────────────────────────────────────────
+    'go_seat_service' => [
+        'url' => env('GO_SERVICE_URL', 'http://localhost:8080'),
+    ],
+
 ];
