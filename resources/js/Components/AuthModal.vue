@@ -219,7 +219,7 @@ function handleKeydown(e: KeyboardEvent) {
                     <label class="text-xs font-semibold text-gray-700" for="modal-password">
                       Password
                     </label>
-                    <a href="/forgot-password" class="text-xs text-teal hover:underline">Lupa password?</a>
+                    <a :href="route('password.request')" class="text-xs text-teal hover:underline">Lupa password?</a>
                   </div>
                   <div class="relative">
                     <input

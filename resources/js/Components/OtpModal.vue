@@ -6,10 +6,12 @@ import axios from 'axios'
 const props = defineProps<{
   show: boolean
   email: string
+  sendRoute?: () => string
+  verifyRoute?: () => string
 }>()
 
 const emit = defineEmits<{
-  verified: []
+  verified: [payload: { token: string | null; email: string }]
   close: []
 }>()
 
@@ -112,45 +114,46 @@ function onPaste(e: ClipboardEvent) {
 }
 
 // ─── API calls ────────────────────────────────────────────────────────────────
-async function verifyOtp() {
-  if (!isFull.value || loading.value) return
-  loading.value = true
-  error.value   = ''
+const sendRoute = props.sendRoute ?? (() => route('otp.send'))
+  const verifyRoute = props.verifyRoute ?? (() => route('otp.verify'))
 
-  try {
-    await axios.post(route('otp.verify'), {
-      email: props.email,
-      code:  code.value,
-    })
-    success.value = true
-    // Tunggu 1.2 detik biar animasi success keliatan, baru emit
-    setTimeout(() => emit('verified'), 1200)
-  } catch (err: any) {
-    error.value = err.response?.data?.message ?? 'Kode tidak valid.'
-    // Shake dan reset digit
-    digits.value = ['', '', '', '', '', '']
-    nextTick(() => inputRefs.value[0]?.focus())
-  } finally {
-    loading.value = false
+  async function verifyOtp() {
+    if (!isFull.value || loading.value) return
+    loading.value = true
+    error.value   = ''
+
+    try {
+      const response = await axios.post(verifyRoute(), {
+        email: props.email,
+        code:  code.value,
+      })
+      success.value = true
+      setTimeout(() => emit('verified', { token: response.data.token ?? null, email: props.email }), 1200)
+    } catch (err: any) {
+      error.value = err.response?.data?.message ?? 'Kode tidak valid.'
+      digits.value = ['', '', '', '', '', '']
+      nextTick(() => inputRefs.value[0]?.focus())
+    } finally {
+      loading.value = false
+    }
   }
-}
 
-async function resendOtp() {
-  if (!canResend.value || resending.value) return
-  resending.value = true
-  error.value     = ''
+  async function resendOtp() {
+    if (!canResend.value || resending.value) return
+    resending.value = true
+    error.value     = ''
 
-  try {
-    await axios.post(route('otp.send'), { email: props.email })
-    digits.value = ['', '', '', '', '', '']
-    startCountdown()
-    nextTick(() => inputRefs.value[0]?.focus())
-  } catch (err: any) {
-    error.value = err.response?.data?.message ?? 'Gagal mengirim ulang kode.'
-  } finally {
-    resending.value = false
+    try {
+      await axios.post(sendRoute(), { email: props.email })
+      digits.value = ['', '', '', '', '', '']
+      startCountdown()
+      nextTick(() => inputRefs.value[0]?.focus())
+    } catch (err: any) {
+      error.value = err.response?.data?.message ?? 'Gagal mengirim ulang kode.'
+    } finally {
+      resending.value = false
+    }
   }
-}
 
 function resetState() {
   digits.value  = ['', '', '', '', '', '']
