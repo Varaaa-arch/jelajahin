@@ -7,6 +7,7 @@ use App\Models\OtpCode;
 use App\Models\User;
 use App\Notifications\OtpNotification;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,7 +32,7 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $request->validate([
             'name'     => 'required|string|max:255',
@@ -53,12 +54,13 @@ class RegisteredUserController extends Controller
         $otp = OtpCode::generateFor($user->email);
         $user->notify(new OtpNotification($otp->code, $user->name));
 
-        // Kembalikan JSON untuk Inertia (modal flow)
+        // Kembalikan JSON untuk modal flow (AuthModal via axios)
         if ($request->wantsJson()) {
-            return response()->json([
-                'otp_sent' => true,
-                'email'    => $user->email,
-            ]);
+            return response()->json(array_filter([
+                'otp_sent'   => true,
+                'email'      => $user->email,
+                'debug_code' => app()->environment(['local', 'testing']) ? $otp->code : null,
+            ], fn ($v) => $v !== null));
         }
 
         return redirect(route('home', absolute: false))->with('verify_otp', true);

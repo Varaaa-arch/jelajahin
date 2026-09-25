@@ -61,10 +61,11 @@ class OtpController extends Controller
         $otp = OtpCode::generateFor($request->email);
         $user->notify(new OtpNotification($otp->code, $user->name));
 
-        return response()->json([
+        return response()->json(array_filter([
             'message'    => 'Kode OTP berhasil dikirim.',
             'expires_at' => $otp->expires_at->toISOString(),
-        ]);
+            'debug_code' => app()->environment(['local', 'testing']) ? $otp->code : null,
+        ], fn ($v) => $v !== null));
     }
 
     /**

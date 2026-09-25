@@ -8,6 +8,8 @@ const props = defineProps<{
   email: string
   sendRoute?: () => string
   verifyRoute?: () => string
+  /** Local/dev only — OTP code returned by the server */
+  initialDebugCode?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -22,6 +24,7 @@ const loading    = ref(false)
 const resending  = ref(false)
 const error      = ref('')
 const success    = ref(false)
+const debugCode  = ref<string | null>(null)
 
 // Countdown resend (60 detik)
 const countdown     = ref(60)
@@ -44,12 +47,17 @@ watch(() => props.show, (v) => {
   if (v) {
     document.body.style.overflow = 'hidden'
     resetState()
+    debugCode.value = props.initialDebugCode ?? null
     startCountdown()
     nextTick(() => inputRefs.value[0]?.focus())
   } else {
     document.body.style.overflow = ''
     clearCountdown()
   }
+}, { immediate: true })
+
+watch(() => props.initialDebugCode, (v) => {
+  if (props.show && v) debugCode.value = v
 })
 
 // Auto-submit when all 6 digits filled
@@ -144,8 +152,9 @@ const sendRoute = props.sendRoute ?? (() => route('otp.send'))
     error.value     = ''
 
     try {
-      await axios.post(sendRoute(), { email: props.email })
+      const response = await axios.post(sendRoute(), { email: props.email })
       digits.value = ['', '', '', '', '', '']
+      debugCode.value = response.data?.debug_code ?? null
       startCountdown()
       nextTick(() => inputRefs.value[0]?.focus())
     } catch (err: any) {
@@ -350,6 +359,14 @@ function close() {
                   </button>
                 </div>
               </div>
+
+              <!-- Local/dev OTP hint -->
+              <p
+                v-if="debugCode"
+                class="mt-4 text-center text-xs font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2"
+              >
+                Kode (dev): <span class="font-bold tracking-widest">{{ debugCode }}</span>
+              </p>
 
               <!-- Info -->
               <p class="text-center text-[11px] text-gray-300 mt-4">

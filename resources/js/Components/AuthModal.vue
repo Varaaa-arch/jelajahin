@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import { router, useForm } from '@inertiajs/vue3'
+import axios from 'axios'
 import OtpModal from '@/Components/OtpModal.vue'
 
 // ─── Props & Emits ────────────────────────────────────────────────────────────
@@ -13,6 +14,11 @@ const emit = defineEmits<{
   close: []
   verified: []
 }>()
+
+const jsonHeaders = {
+  Accept: 'application/json',
+  'X-Requested-With': 'XMLHttpRequest',
+}
 
 // ─── Tab state ────────────────────────────────────────────────────────────────
 const activeTab = ref<'login' | 'register'>(props.initialTab ?? 'login')
@@ -31,8 +37,9 @@ watch(() => props.show, (v) => {
 })
 
 // ─── OTP state ───────────────────────────────────────────────────────────────
-const showOtpModal   = ref(false)
+const showOtpModal    = ref(false)
 const registeredEmail = ref('')
+const otpDebugCode    = ref<string | null>(null)
 
 // ─── Show/hide password ───────────────────────────────────────────────────────
 const showLoginPw  = ref(false)
@@ -46,11 +53,38 @@ const loginForm = useForm({
   remember: false,
 })
 
-function submitLogin() {
-  loginForm.post(route('login'), {
-    onSuccess: () => emit('close'),
-    onFinish:  () => loginForm.reset('password'),
-  })
+async function submitLogin() {
+  loginForm.clearErrors()
+  loginForm.processing = true
+
+  try {
+    const { data } = await axios.post(route('login'), {
+      email:    loginForm.email,
+      password: loginForm.password,
+      remember: loginForm.remember,
+    }, { headers: jsonHeaders })
+
+    if (data.needs_otp) {
+      registeredEmail.value = data.email ?? loginForm.email
+      otpDebugCode.value    = data.debug_code ?? null
+      showOtpModal.value    = true
+    } else {
+      emit('close')
+      router.reload({ preserveState: false })
+    }
+  } catch (err: any) {
+    const errors = err.response?.data?.errors
+    if (errors) {
+      Object.entries(errors).forEach(([key, messages]) => {
+        loginForm.setError(key as 'email' | 'password' | 'remember', (messages as string[])[0] ?? '')
+      })
+    } else {
+      loginForm.setError('email', err.response?.data?.message ?? 'Login gagal.')
+    }
+  } finally {
+    loginForm.processing = false
+    loginForm.reset('password')
+  }
 }
 
 // ─── Register form ────────────────────────────────────────────────────────────
@@ -61,19 +95,45 @@ const registerForm = useForm({
   password_confirmation: '',
 })
 
-function submitRegister() {
-  registerForm.post(route('register'), {
-    onSuccess: () => {
-      registeredEmail.value = registerForm.email
-      showOtpModal.value = true
-    },
-    onFinish: () => registerForm.reset('password', 'password_confirmation'),
-  })
+async function submitRegister() {
+  registerForm.clearErrors()
+  registerForm.processing = true
+
+  try {
+    const { data } = await axios.post(route('register'), {
+      name:                  registerForm.name,
+      email:                 registerForm.email,
+      password:              registerForm.password,
+      password_confirmation: registerForm.password_confirmation,
+    }, { headers: jsonHeaders })
+
+    registeredEmail.value = data.email ?? registerForm.email
+    otpDebugCode.value    = data.debug_code ?? null
+    showOtpModal.value    = true
+  } catch (err: any) {
+    const errors = err.response?.data?.errors
+    if (errors) {
+      Object.entries(errors).forEach(([key, messages]) => {
+        registerForm.setError(
+          key as 'name' | 'email' | 'password' | 'password_confirmation',
+          (messages as string[])[0] ?? '',
+        )
+      })
+    } else {
+      registerForm.setError('email', err.response?.data?.message ?? 'Registrasi gagal.')
+    }
+  } finally {
+    registerForm.processing = false
+    registerForm.reset('password', 'password_confirmation')
+  }
 }
 
 function handleOtpVerified() {
   showOtpModal.value = false
+  otpDebugCode.value = null
   emit('verified')
+  emit('close')
+  router.visit(route('dashboard'), { preserveState: false })
 }
 
 function close() {
@@ -83,6 +143,7 @@ function close() {
   registerForm.clearErrors()
   showOtpModal.value = false
   registeredEmail.value = ''
+  otpDebugCode.value = null
   activeTab.value = props.initialTab ?? 'login'
   emit('close')
 }
@@ -107,7 +168,7 @@ function handleKeydown(e: KeyboardEvent) {
       leave-to-class="opacity-0"
     >
       <div
-        v-if="show"
+        v-if="show && !showOtpModal"
         id="auth-modal-backdrop"
         class="fixed inset-0 z-[100] flex items-center justify-center px-4"
         role="dialog"
@@ -129,7 +190,7 @@ function handleKeydown(e: KeyboardEvent) {
           leave-to-class="opacity-0 scale-95 translate-y-4"
         >
           <div
-            v-if="show"
+            v-if="show && !showOtpModal"
             class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-y-auto max-h-[90dvh] scrollbar-hide"
             @click.stop
           >
@@ -524,29 +585,14 @@ function handleKeydown(e: KeyboardEvent) {
       </div>
     </Transition>
 
-    <!-- ── OTP MODAL (setelah register) ────────────────────────────── -->
-    <Transition
-      enter-active-class="transition-all duration-200 ease-out"
-      enter-from-class="opacity-0 scale-95 translate-y-4"
-      enter-to-class="opacity-100 scale-100 translate-y-0"
-      leave-active-class="transition-all duration-150 ease-in"
-      leave-from-class="opacity-100 scale-100 translate-y-0"
-      leave-to-class="opacity-0 scale-95 translate-y-4"
-    >
-      <div
-        v-if="showOtpModal"
-        class="fixed inset-0 z-[110] flex items-center justify-center px-4"
-        @click.self="close"
-      >
-        <div class="absolute inset-0 bg-black/65 backdrop-blur-sm" />
-        <OtpModal
-          :show="showOtpModal"
-          :email="registeredEmail"
-          @verified="handleOtpVerified"
-          @close="close"
-        />
-      </div>
-    </Transition>
+    <!-- ── OTP MODAL (setelah register/login) ─────────────────────────── -->
+    <OtpModal
+      :show="showOtpModal"
+      :email="registeredEmail"
+      :initial-debug-code="otpDebugCode"
+      @verified="handleOtpVerified"
+      @close="close"
+    />
 
   </Teleport>
 </template>

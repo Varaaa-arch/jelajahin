@@ -146,4 +146,39 @@ class OtpTest extends TestCase
         $this->assertEquals(6, strlen($otp->code));
         $this->assertMatchesRegularExpression('/^\d{6}$/', $otp->code);
     }
+
+    public function test_otp_send_includes_debug_code_in_local(): void
+    {
+        $user = User::factory()->create(['email' => 'test@example.com']);
+
+        $response = $this->postJson('/api/otp/send', ['email' => 'test@example.com']);
+
+        $response->assertStatus(200)
+                 ->assertJsonStructure(['message', 'expires_at', 'debug_code']);
+        $this->assertMatchesRegularExpression('/^\d{6}$/', $response->json('debug_code'));
+        Notification::assertSentTo($user, OtpNotification::class);
+    }
+
+    public function test_json_register_returns_otp_sent_and_debug_code(): void
+    {
+        $response = $this->postJson('/register', [
+            'name' => 'Test User',
+            'email' => 'newuser@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertOk()
+            ->assertJson([
+                'otp_sent' => true,
+                'email' => 'newuser@example.com',
+            ])
+            ->assertJsonStructure(['debug_code']);
+        $this->assertMatchesRegularExpression('/^\d{6}$/', $response->json('debug_code'));
+        Notification::assertSentTo(
+            User::where('email', 'newuser@example.com')->first(),
+            OtpNotification::class
+        );
+    }
 }
