@@ -31,7 +31,7 @@ const footerLinks = {
 
         <!-- Brand -->
         <div>
-          <span class="text-white font-black text-xl block mb-3">Jelajahin</span>
+          <img src="/images/logo.png" alt="Jelajahin" class="h-24 w-auto brightness-0 invert block mb-3" />
           <p class="text-white/50 text-sm leading-relaxed mb-5">
             Memudahkan Anda menuju destinasi impian dengan cara yang
             lebih mudah, aman, dan terpercaya.

@@ -75,26 +75,11 @@ onUnmounted(() => {
         <aside
             class="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-navy lg:flex"
         >
-            <div class="flex h-16 items-center gap-3 border-b border-white/10 px-5">
-                <div
-                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-teal shadow-lg shadow-gray-900/10"
-                >
-                    <svg
-                        class="h-5 w-5 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19.5 2.5c-1.5-1.5-3.5-1.5-5 0L11 6 2.8 4.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 5.2 6.3c.3.4.8.5 1.3.3l.5-.3c.4-.2.6-.6.5-1.1z"
-                        />
-                    </svg>
-                </div>
-                <span class="text-xl font-black tracking-tight text-white">Jelajahin</span>
+            <div class="flex h-16 items-center border-b border-white/10 px-5">
+                <img src="/images/logo.png" alt="Jelajahin" class="h-28 w-auto brightness-0 invert" />
             </div>
 
-            <nav class="flex-1 space-y-1 px-3 py-5">
+            <nav class="flex flex-col flex-1 overflow-y-auto px-3 py-4 gap-0.5">
                 <span class="px-3 pb-2 text-[11px] font-bold uppercase tracking-widest text-white/40">
                     Menu
                 </span>
@@ -162,23 +147,8 @@ onUnmounted(() => {
             />
             <div class="absolute inset-y-0 left-0 flex w-72 flex-col bg-navy shadow-2xl">
                 <div class="flex h-16 items-center justify-between border-b border-white/10 px-5">
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-teal shadow-lg shadow-gray-900/10"
-                        >
-                            <svg
-                                class="h-5 w-5 text-white"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19.5 2.5c-1.5-1.5-3.5-1.5-5 0L11 6 2.8 4.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 5.2 6.3c.3.4.8.5 1.3.3l.5-.3c.4-.2.6-.6.5-1.1z"
-                                />
-                            </svg>
-                        </div>
-                        <span class="text-xl font-black tracking-tight text-white">Jelajahin</span>
+                    <div class="flex items-center">
+                        <img src="/images/logo.png" alt="Jelajahin" class="h-28 w-auto brightness-0 invert" />
                     </div>
                     <button
                         type="button"

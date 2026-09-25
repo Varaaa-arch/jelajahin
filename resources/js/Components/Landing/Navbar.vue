@@ -135,8 +135,8 @@ const navLinks = [
       <div class="flex items-center h-16 gap-8">
 
         <!-- Logo -->
-        <Link href="/" class="text-white font-black text-xl tracking-tight shrink-0 hover:opacity-90 transition-opacity">
-          Jelajahin
+        <Link href="/" class="shrink-0 hover:opacity-90 transition-opacity">
+          <img src="/images/logo.png" alt="Jelajahin" class="h-28 w-auto" />
         </Link>
 
         <!-- Search pill (desktop) -->
@@ -309,7 +309,7 @@ const navLinks = [
           >
             <!-- Header -->
             <div class="flex items-center justify-between mb-6">
-              <span class="text-white font-black text-xl">Jelajahin</span>
+              <img src="/images/logo.png" alt="Jelajahin" class="h-9 w-auto brightness-0 invert" />
               <button
                 class="p-1.5 rounded-md text-white/60 hover:text-white hover:bg-white/7 transition-all"
                 aria-label="Tutup menu"

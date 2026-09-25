@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Head, useForm, Inertia } from '@inertiajs/vue3'
+import { Head, useForm, router } from '@inertiajs/vue3'
 import GuestLayout from '@/Layouts/GuestLayout.vue'
 import OtpModal from '@/Components/OtpModal.vue'
 

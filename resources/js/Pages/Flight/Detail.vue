@@ -30,6 +30,15 @@ const otherFlights = ref([
   { airline: 'Garuda Indonesia', dep: '18:15', arr: '21:05', price: 3450000, logo: 'GA' },
 ])
 
+const fasilitasList = [
+  { icon: '\u{1F9F3}', label: 'Bagasi 20 kg', desc: 'Bagasi kabin 7 kg termasuk' },
+  { icon: '\u{1F37D}', label: 'Makan Tersedia', desc: 'Snack & minuman gratis' },
+  { icon: '\u{1FA91}', label: 'Kursi Standar', desc: 'Pitch 30" \u2022 Lebar 18"' },
+  { icon: '\u{1F50C}', label: 'USB Charging', desc: 'Di setiap kursi' },
+  { icon: '\u{1F4F6}', label: 'Wi-Fi Berbayar', desc: 'Paket mulai Rp 50.000' },
+  { icon: '\u{1F3AC}', label: 'Hiburan Onboard', desc: 'Layar 10" personal IFE' },
+]
+
 // ─── Computed ─────────────────────────────────────────────────────────────────
 const originCode = computed(() => flight.value?.origin?.code ?? 'CGK')
 const destCode   = computed(() => flight.value?.destination?.code ?? 'DPS')
@@ -263,14 +272,7 @@ onMounted(async () => {
               <div v-else-if="activeTab === 'fasilitas'" role="tabpanel" aria-label="Fasilitas">
                 <div class="grid sm:grid-cols-2 gap-3">
                   <div
-                    v-for="item in [
-                      { icon: '🧳', label: 'Bagasi 20 kg', desc: 'Bagasi kabin 7 kg termasuk' },
-                      { icon: '🍽️', label: 'Makan Tersedia', desc: 'Snack & minuman gratis' },
-                      { icon: '💺', label: 'Kursi Standar', desc: 'Pitch 30" • Lebar 18"' },
-                      { icon: '🔌', label: 'USB Charging', desc: 'Di setiap kursi' },
-                      { icon: '📶', label: 'Wi-Fi Berbayar', desc: 'Paket mulai Rp 50.000' },
-                      { icon: '🎬', label: 'Hiburan Onboard', desc: 'Layar 10" personal IFE' },
-                    ]"
+                    v-for="item in fasilitasList"
                     :key="item.label"
                     class="flex items-start gap-3 bg-navy/60 border border-white/6 rounded-xl p-4"
                   >
