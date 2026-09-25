@@ -61,6 +61,6 @@ class RegisteredUserController extends Controller
             ]);
         }
 
-        return redirect(route('dashboard', absolute: false));
+        return redirect(route('home', absolute: false))->with('verify_otp', true);
     }
 }

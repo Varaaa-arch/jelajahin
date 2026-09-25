@@ -9,6 +9,7 @@ Route::get('/', function () {
     return Inertia::render('Home', [
         'canLogin'    => Route::has('login'),
         'canRegister' => Route::has('register'),
+        'verifyOtp'   => (bool) session()->pull('verify_otp', false),
     ]);
 })->name('home');
 

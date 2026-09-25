@@ -33,7 +33,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        if (! $request->user()->hasVerifiedEmail()) {
+            session(['verify_otp' => true]);
+        }
+
+        return redirect(route('home', absolute: false));
     }
 
     /**

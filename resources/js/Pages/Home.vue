@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { Head, router, usePage } from '@inertiajs/vue3'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import Navbar from '@/Components/Landing/Navbar.vue'
 import HeroSection from '@/Components/Landing/HeroSection.vue'
 import SearchBox from '@/Components/Landing/SearchBox.vue'
@@ -8,11 +8,27 @@ import OffersSection from '@/Components/Landing/OffersSection.vue'
 import DestinationsSection from '@/Components/Landing/DestinationsSection.vue'
 import TrustSection from '@/Components/Landing/TrustSection.vue'
 import AppFooter from '@/Components/Landing/AppFooter.vue'
+import OtpModal from '@/Components/OtpModal.vue'
 
-defineProps<{
+const props = defineProps<{
   canLogin?: boolean
   canRegister?: boolean
+  verifyOtp?: boolean
 }>()
+
+const page = usePage()
+const authUser = computed(() => (page.props.auth as { user?: { name: string; email: string } | null } | undefined)?.user ?? null)
+
+const showOtp = ref(false)
+
+watch(() => props.verifyOtp, (v) => {
+  if (v) showOtp.value = true
+}, { immediate: true })
+
+function handleOtpVerified() {
+  showOtp.value = false
+  router.visit(route('dashboard'), { preserveState: false })
+}
 
 // Scroll-to-top
 const showScrollTop = ref(false)
@@ -59,6 +75,15 @@ onUnmounted(() => {
     </main>
 
     <AppFooter />
+
+    <!-- Auto-open OTP verification after login/register -->
+    <OtpModal
+      v-if="showOtp && authUser"
+      :show="showOtp"
+      :email="authUser.email"
+      @verified="handleOtpVerified"
+      @close="showOtp = false"
+    />
 
     <!-- Scroll to top FAB -->
     <Transition name="fade-up">
