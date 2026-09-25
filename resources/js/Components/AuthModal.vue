@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
 import { useForm } from '@inertiajs/vue3'
+import OtpModal from '@/Components/OtpModal.vue'
 
 // ─── Props & Emits ────────────────────────────────────────────────────────────
 const props = defineProps<{
@@ -10,6 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
+  verified: []
 }>()
 
 // ─── Tab state ────────────────────────────────────────────────────────────────
@@ -27,6 +29,10 @@ watch(() => props.show, (v) => {
     document.body.style.overflow = ''
   }
 })
+
+// ─── OTP state ───────────────────────────────────────────────────────────────
+const showOtpModal   = ref(false)
+const registeredEmail = ref('')
 
 // ─── Show/hide password ───────────────────────────────────────────────────────
 const showLoginPw  = ref(false)
@@ -57,9 +63,17 @@ const registerForm = useForm({
 
 function submitRegister() {
   registerForm.post(route('register'), {
-    onSuccess: () => emit('close'),
-    onFinish:  () => registerForm.reset('password', 'password_confirmation'),
+    onSuccess: () => {
+      registeredEmail.value = registerForm.email
+      showOtpModal.value = true
+    },
+    onFinish: () => registerForm.reset('password', 'password_confirmation'),
   })
+}
+
+function handleOtpVerified() {
+  showOtpModal.value = false
+  emit('verified')
 }
 
 function close() {
@@ -67,6 +81,9 @@ function close() {
   registerForm.reset()
   loginForm.clearErrors()
   registerForm.clearErrors()
+  showOtpModal.value = false
+  registeredEmail.value = ''
+  activeTab.value = props.initialTab ?? 'login'
   emit('close')
 }
 
@@ -506,6 +523,31 @@ function handleKeydown(e: KeyboardEvent) {
         </Transition>
       </div>
     </Transition>
+
+    <!-- ── OTP MODAL (setelah register) ────────────────────────────── -->
+    <Transition
+      enter-active-class="transition-all duration-200 ease-out"
+      enter-from-class="opacity-0 scale-95 translate-y-4"
+      enter-to-class="opacity-100 scale-100 translate-y-0"
+      leave-active-class="transition-all duration-150 ease-in"
+      leave-from-class="opacity-100 scale-100 translate-y-0"
+      leave-to-class="opacity-0 scale-95 translate-y-4"
+    >
+      <div
+        v-if="showOtpModal"
+        class="fixed inset-0 z-[110] flex items-center justify-center px-4"
+        @click.self="close"
+      >
+        <div class="absolute inset-0 bg-black/65 backdrop-blur-sm" />
+        <OtpModal
+          :show="showOtpModal"
+          :email="registeredEmail"
+          @verified="handleOtpVerified"
+          @close="close"
+        />
+      </div>
+    </Transition>
+
   </Teleport>
 </template>
 

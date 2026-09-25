@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -67,3 +68,8 @@ Route::middleware('guest')->group(function () {
     Route::get('auth/{provider}/callback', [SocialAuthController::class, 'callback'])
         ->name('social.callback');
 });
+
+// ─── OTP Verification ─────────────────────────────────────────────────────────
+Route::get('verify-otp', [OtpController::class, 'show'])->name('otp.show');
+Route::post('otp/send',   [OtpController::class, 'send'])  ->name('otp.send');
+Route::post('otp/verify', [OtpController::class, 'verify'])->name('otp.verify');
