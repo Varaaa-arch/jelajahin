@@ -13,7 +13,7 @@ class SocialAuthController extends Controller
     /**
      * Provider yang didukung.
      */
-    private const SUPPORTED_PROVIDERS = ['google', 'facebook', 'tiktok'];
+    private const SUPPORTED_PROVIDERS = ['google', 'facebook', 'github'];
 
     /**
      * Redirect user ke OAuth provider.

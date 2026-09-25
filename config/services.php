@@ -48,10 +48,10 @@ return [
         'redirect'      => env('FACEBOOK_REDIRECT_URI', '/auth/facebook/callback'),
     ],
 
-    'tiktok' => [
-        'client_id'     => env('TIKTOK_CLIENT_KEY'),
-        'client_secret' => env('TIKTOK_CLIENT_SECRET'),
-        'redirect'      => env('TIKTOK_REDIRECT_URI', '/auth/tiktok/callback'),
+    'github' => [
+        'client_id'     => env('GITHUB_CLIENT_ID'),
+        'client_secret' => env('GITHUB_CLIENT_SECRET'),
+        'redirect'      => env('GITHUB_REDIRECT_URI', '/auth/github/callback'),
     ],
 
     // ─── Go Seat Microservice ─────────────────────────────────────────────────
