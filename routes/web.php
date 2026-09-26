@@ -73,7 +73,11 @@ Route::get('/booking/review', function () {
 
 Route::get('/booking/create', function () {
     return Inertia::render('Booking/Create', [
-        'flightId' => request('flightId'),
+        'flightId'       => request('flightId'),
+        'passengerCount' => (int) request('passengerCount', 1),
+        'adultCount'     => (int) request('adultCount', 1),
+        'childCount'     => (int) request('childCount', 0),
+        'infantCount'    => (int) request('infantCount', 0),
     ]);
 })->name('booking.create');
 

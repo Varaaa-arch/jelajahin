@@ -23,6 +23,7 @@ export function useSeatLock(flightId: string) {
 
   const lockTimeRemaining = ref(LOCK_TTL_SECONDS)
   const lockStartTime = ref<number | null>(null)
+  const skipAutoUnlock = ref(false)
   let countdownInterval: ReturnType<typeof setInterval> | null = null
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -109,6 +110,7 @@ export function useSeatLock(flightId: string) {
       await httpClient.post('/api/v1/seats/unlock', {
         flight_id: flightId,
         seat_id: seatId,
+        user_id: getUserId(),
       })
     } catch (err: any) {
       // 404 berarti lock sudah expired, tidak perlu error
@@ -255,11 +257,11 @@ export function useSeatLock(flightId: string) {
 
   onUnmounted(() => {
     stopCountdown()
-    // Fire-and-forget unlock di background
+    if (skipAutoUnlock.value) return
     const toUnlock = [...selectedSeats.value]
     toUnlock.forEach(s => {
       httpClient
-        .post('/api/v1/seats/unlock', { flight_id: flightId, seat_id: s.seatId })
+        .post('/api/v1/seats/unlock', { flight_id: flightId, seat_id: s.seatId, user_id: getUserId() })
         .catch(() => {})
     })
   })
@@ -289,5 +291,6 @@ export function useSeatLock(flightId: string) {
     lockPercentage,
     lockTimeLabel,
     isLockExpiringSoon,
+    skipAutoUnlock,
   }
 }

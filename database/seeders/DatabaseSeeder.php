@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             AirlineSeeder::class,
             RouteSeeder::class,
             FlightSeeder::class,
+            FlightSeatSeeder::class,
         ]);
 
         User::factory()->create([
