@@ -18,7 +18,21 @@ Route::get('/about', function () {
 })->name('about');
 
 Route::get('/flights/search', function () {
-    return Inertia::render('Flight/Search');
+    return Inertia::render('Flight/Results', [
+        'origin'      => request('origin'),
+        'destination' => request('destination'),
+        'dates'       => request('dates'),
+        'passengers'  => request('passengers'),
+    ]);
+})->name('flights.results');
+
+Route::get('/penerbangan', function () {
+    return Inertia::render('Flight/Search', [
+        'origin'      => request('origin'),
+        'destination' => request('destination'),
+        'dates'       => request('dates'),
+        'passengers'  => request('passengers'),
+    ]);
 })->name('flights.search');
 
 Route::get('/faq', function () {
@@ -46,6 +60,16 @@ Route::get('/flights/{flightId}', function (string $flightId) {
 Route::get('/dashboard', DashboardController::class)
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+
+Route::get('/booking/review', function () {
+    return Inertia::render('Booking/Review', [
+        'flightId'       => request('flightId'),
+        'passengerCount' => (int) request('passengerCount', 1),
+        'adultCount'     => (int) request('adultCount', 1),
+        'childCount'     => (int) request('childCount', 0),
+        'infantCount'    => (int) request('infantCount', 0),
+    ]);
+})->name('booking.review');
 
 Route::get('/booking/create', function () {
     return Inertia::render('Booking/Create', [

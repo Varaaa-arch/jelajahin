@@ -9,6 +9,16 @@ const destination = ref('')
 const dates = ref('')
 const passengers = ref('2 Dewasa, 1 Anak')
 
+// Airport options dari database
+const airports = [
+  { code: 'CGK', label: 'Jakarta (CGK) — Soekarno-Hatta' },
+  { code: 'HLP', label: 'Jakarta (HLP) — Halim Perdanakusuma' },
+  { code: 'DPS', label: 'Denpasar (DPS) — Ngurah Rai' },
+  { code: 'SUB', label: 'Surabaya (SUB) — Juanda' },
+  { code: 'KNO', label: 'Medan (KNO) — Kualanamu' },
+  { code: 'UPG', label: 'Makassar (UPG) — Sultan Hasanuddin' },
+]
+
 const tabs = [
   {
     id: 'flight' as const,
@@ -79,7 +89,7 @@ function handleSearch() {
 
   if (activeTab.value === 'flight') {
     isSearching.value = true
-    router.visit(route('flights.search'), {
+    router.visit(route('flights.results'), {
       method: 'get',
       data: {
         origin: origin.value,
@@ -143,17 +153,18 @@ function handleSearch() {
                 <svg class="w-4 h-4 text-teal shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true">
                   <circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 10-16 0c0 3 2.7 6.9 8 11.7z"/>
                 </svg>
-                <input
+                <select
                   id="search-origin"
                   v-model="origin"
-                  type="text"
-                  :placeholder="currentPlaceholders.origin"
-                  class="border-none outline-none text-sm font-medium text-navy placeholder-gray-400 w-full p-0 focus:ring-0 bg-transparent"
+                  class="border-none outline-none text-sm font-medium text-navy w-full p-0 focus:ring-0 bg-transparent cursor-pointer"
                   aria-label="Kota asal"
-                  @input="clearError('origin')"
-                />
+                  @change="clearError('origin')"
+                >
+                  <option value="" disabled>Pilih kota asal</option>
+                  <option v-for="ap in airports" :key="ap.code" :value="ap.code">{{ ap.label }}</option>
+                </select>
               </div>
-              <span v-if="originError" class="text-xs text-red-500">Masukkan kota asal</span>
+              <span v-if="originError" class="text-xs text-red-500">Pilih kota asal</span>
             </div>
 
             <!-- Destination -->
@@ -170,17 +181,18 @@ function handleSearch() {
                 <svg class="w-4 h-4 text-teal shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true">
                   <circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 10-16 0c0 3 2.7 6.9 8 11.7z"/>
                 </svg>
-                <input
+                <select
                   id="search-dest"
                   v-model="destination"
-                  type="text"
-                  :placeholder="currentPlaceholders.dest"
-                  class="border-none outline-none text-sm font-medium text-navy placeholder-gray-400 w-full p-0 focus:ring-0 bg-transparent"
+                  class="border-none outline-none text-sm font-medium text-navy w-full p-0 focus:ring-0 bg-transparent cursor-pointer"
                   aria-label="Kota tujuan"
-                  @input="clearError('dest')"
-                />
+                  @change="clearError('dest')"
+                >
+                  <option value="" disabled>Pilih kota tujuan</option>
+                  <option v-for="ap in airports" :key="ap.code" :value="ap.code">{{ ap.label }}</option>
+                </select>
               </div>
-              <span v-if="destError" class="text-xs text-red-500">Masukkan kota tujuan</span>
+              <span v-if="destError" class="text-xs text-red-500">Pilih kota tujuan</span>
             </div>
 
             <!-- Dates -->
@@ -193,9 +205,9 @@ function handleSearch() {
                 <input
                   id="search-dates"
                   v-model="dates"
-                  type="text"
-                  :placeholder="currentPlaceholders.dates"
-                  class="border-none outline-none text-sm font-medium text-navy placeholder-gray-400 w-full p-0 focus:ring-0 bg-transparent"
+                  type="date"
+                  min="2026-09-27"
+                  class="border-none outline-none text-sm font-medium text-navy w-full p-0 focus:ring-0 bg-transparent cursor-pointer"
                   aria-label="Tanggal perjalanan"
                 />
               </div>

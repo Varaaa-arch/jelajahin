@@ -75,7 +75,13 @@ const formatDuration = (minutes: number) => {
 const proceedToPayment = () => {
   if (!flight.value) return
   sessionStorage.setItem('selectedFlight', JSON.stringify(flight.value))
-  router.visit(`/booking/create?flightId=${props.flightId}`)
+  router.visit(route('booking.review', {
+    flightId:       props.flightId,
+    passengerCount: passengerCount.value,
+    adultCount:     adultCount.value,
+    childCount:     childCount.value,
+    infantCount:    0,
+  }))
 }
 
 const selectOtherFlight = (idx: number) => {

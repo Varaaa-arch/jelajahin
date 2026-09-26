@@ -42,7 +42,7 @@ const iconPaths: Record<string, string> = {
   logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9',
 }
 
-const transparentRoutes = ['/', '/about', '/flights/search']
+const transparentRoutes = ['/', '/about']
 const currentRoute = computed(() => page.url)
 
 const shouldBeTransparent = computed(() =>

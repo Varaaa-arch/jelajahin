@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
-import { Head, router } from '@inertiajs/vue3'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { Head, router, usePage } from '@inertiajs/vue3'
 import Navbar from '@/Components/Landing/Navbar.vue'
 import AppFooter from '@/Components/Landing/AppFooter.vue'
 import { httpClient } from '@/utils/http'
+
+// ─── Props dari beranda ───────────────────────────────────────────────────────
+const props = defineProps<{
+  origin?: string
+  destination?: string
+  dates?: string
+  passengers?: string
+}>()
 
 // ─── Search form state ─────────────────────────────────────────────────────────
 
@@ -41,6 +49,21 @@ function formatDateDisplay(dateStr: string) {
 const originAirport = computed(() => airports.find(a => a.code === searchParams.origin))
 const destinationAirport = computed(() => airports.find(a => a.code === searchParams.destination))
 
+// Prefill dari query params beranda
+onMounted(() => {
+  if (props.origin)      searchParams.origin = props.origin
+  if (props.destination) searchParams.destination = props.destination
+  if (props.dates)       searchParams.departure_date = props.dates
+  if (props.passengers) {
+    const match = props.passengers.match(/(\d+)\s*Dewasa/)
+    if (match) searchParams.passengers = parseInt(match[1])
+  }
+  // Auto search jika params lengkap
+  if (props.origin && props.destination && props.dates) {
+    handleSearch()
+  }
+})
+
 function swapAirports() {
   const tmp = searchParams.origin
   searchParams.origin = searchParams.destination
@@ -55,8 +78,13 @@ const error = ref('')
 const flights = ref<any[]>([])
 
 const handleSelectFlight = (flight: any) => {
-  sessionStorage.setItem('selectedFlight', JSON.stringify(flight))
-  router.visit(`/booking/create?flightId=${flight.id}`)
+  router.visit(route('booking.review', {
+    flightId:       flight.id,
+    passengerCount: searchParams.passengers,
+    adultCount:     searchParams.passengers,
+    childCount:     0,
+    infantCount:    0,
+  }))
 }
 
 function buildMockFlight() {
@@ -84,7 +112,9 @@ const handleSearch = async () => {
   }
 
   loading.value = true
+  searched.value = false
   error.value = ''
+  flights.value = []
 
   try {
     const response = await httpClient.get('/api/v1/flights/search', {
@@ -94,21 +124,17 @@ const handleSearch = async () => {
         departure_date: searchParams.departure_date,
       }
     })
-    const results: any[] = response.data.data || []
+    flights.value = response.data.data || []
+    searched.value = true
 
-    // Ada hasil → pakai flight pertama dari API
-    if (results.length > 0) {
-      handleSelectFlight(results[0])
-      return
+    // Kalau tidak ada hasil sama sekali, tampilkan mock supaya bisa dicoba
+    if (flights.value.length === 0) {
+      flights.value = [buildMockFlight()]
     }
 
-    // API sukses tapi kosong → pakai mock, tetap navigate
-    handleSelectFlight(buildMockFlight())
-
   } catch {
-    // Backend mati / error → pakai mock, tetap navigate
-    handleSelectFlight(buildMockFlight())
-
+    flights.value = [buildMockFlight()]
+    searched.value = true
   } finally {
     loading.value = false
   }
