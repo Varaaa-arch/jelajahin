@@ -1,160 +1,240 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4">
-    <div class="max-w-2xl mx-auto">
+  <Head title="Pembayaran Berhasil — Jelajahin" />
 
-      <!-- Success Animation -->
-      <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-24 h-24 bg-green-500 rounded-full mb-6 shadow-lg animate-bounce-once">
-          <svg class="w-14 h-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-          </svg>
-        </div>
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Pembayaran Berhasil!</h1>
-        <p class="text-gray-500">Tiket kamu sudah dikonfirmasi. Selamat terbang! ✈️</p>
-      </div>
+  <div class="min-h-screen bg-gray-50 flex flex-col">
+    <Navbar />
 
-      <!-- Booking Card / E-Ticket Preview -->
-      <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-        <!-- Header Tiket -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 text-white">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs uppercase tracking-widest opacity-80 mb-1">Kode Pemesanan</p>
-              <p class="text-2xl font-bold font-mono tracking-widest">{{ pnrCode }}</p>
+    <main class="flex-1 py-8 pb-12">
+      <div class="max-w-2xl mx-auto px-4 sm:px-6">
+
+        <!-- Hero sukses -->
+        <div class="text-center mb-8">
+          <div class="inline-flex items-center justify-center w-20 h-20 bg-teal rounded-full mb-5 shadow-lg shadow-teal/30 animate-pop-in relative">
+            <Check class="w-10 h-10 text-white" :stroke-width="3" />
+            <span class="absolute inset-0 rounded-full bg-teal/30 animate-ping-once pointer-events-none" />
+          </div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Pembayaran Berhasil!</h1>
+          <p class="text-gray-500">
+            Tiket kamu sudah dikonfirmasi dan e-tiket telah dikirim ke email.
+          </p>
+
+          <!-- Chip PNR + salin -->
+          <div class="mt-5 inline-flex items-center gap-3 bg-white border border-gray-200 rounded-2xl pl-5 pr-3 py-3 shadow-sm">
+            <div class="text-left">
+              <p class="text-[11px] uppercase tracking-widest text-gray-400 font-semibold">Kode Pemesanan</p>
+              <p class="font-mono font-bold text-xl text-gray-900 tracking-[0.2em]">{{ pnrCode }}</p>
             </div>
-            <div class="text-right">
-              <p class="text-xs uppercase tracking-widest opacity-80 mb-1">Status</p>
-              <span class="inline-flex items-center gap-1 bg-green-400 text-white text-sm font-semibold px-3 py-1 rounded-full">
-                ✓ Confirmed
+            <button
+              type="button"
+              @click="copyPnr"
+              class="flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl transition-colors"
+              :class="pnrCopied ? 'text-teal bg-teal-50' : 'text-gray-500 hover:text-teal hover:bg-teal-50'"
+            >
+              <Check v-if="pnrCopied" class="w-4 h-4" />
+              <Copy v-else class="w-4 h-4" />
+              {{ pnrCopied ? 'Tersalin!' : 'Salin' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Boarding-pass card -->
+        <div class="bg-white rounded-3xl shadow-xl shadow-gray-200/60 overflow-hidden mb-6 border border-gray-100">
+          <!-- Header navy -->
+          <div class="bg-navy px-6 py-5 text-white">
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-teal flex items-center justify-center shrink-0">
+                  <Plane class="w-5 h-5 text-white" />
+                </div>
+                <div class="min-w-0">
+                  <p class="font-bold truncate">{{ airlineName }}</p>
+                  <p class="text-xs text-white/60">{{ flightNumber }}</p>
+                </div>
+              </div>
+              <span class="inline-flex items-center gap-1.5 bg-teal text-white text-xs font-bold px-3 py-1.5 rounded-full shrink-0">
+                <BadgeCheck class="w-4 h-4" /> Confirmed
               </span>
             </div>
           </div>
-        </div>
 
-        <!-- Ticket Body -->
-        <div class="px-6 py-5">
-          <!-- Flight Info -->
-          <div class="flex items-center justify-between mb-6">
-            <div class="text-center">
-              <p class="text-3xl font-bold text-gray-800">{{ originCode }}</p>
-              <p class="text-sm text-gray-500 mt-1">{{ originCity }}</p>
-            </div>
-            <div class="flex-1 text-center px-4">
-              <div class="flex items-center">
-                <div class="flex-1 border-t-2 border-dashed border-gray-300"></div>
-                <div class="mx-3">
-                  <svg class="w-7 h-7 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
-                  </svg>
-                </div>
-                <div class="flex-1 border-t-2 border-dashed border-gray-300"></div>
+          <!-- Rute -->
+          <div class="px-6 pt-6 pb-2">
+            <div class="flex items-center justify-between gap-2">
+              <div class="text-center w-24">
+                <p class="text-3xl font-black text-gray-900">{{ originCode }}</p>
+                <p class="text-xs text-gray-500 mt-1 truncate">{{ originCity }}</p>
               </div>
-              <p class="text-xs text-gray-400 mt-1">{{ flightNumber }}</p>
-            </div>
-            <div class="text-center">
-              <p class="text-3xl font-bold text-gray-800">{{ destinationCode }}</p>
-              <p class="text-sm text-gray-500 mt-1">{{ destinationCity }}</p>
+              <div class="flex-1 flex flex-col items-center px-1">
+                <div class="w-full flex items-center gap-2">
+                  <div class="flex-1 h-px bg-gray-200" />
+                  <span class="w-9 h-9 rounded-full bg-teal-50 flex items-center justify-center shrink-0">
+                    <Plane class="w-4 h-4 text-teal" />
+                  </span>
+                  <div class="flex-1 h-px bg-gray-200" />
+                </div>
+                <p class="text-[11px] text-gray-400 mt-1.5">Penerbangan langsung</p>
+              </div>
+              <div class="text-center w-24">
+                <p class="text-3xl font-black text-gray-900">{{ destinationCode }}</p>
+                <p class="text-xs text-gray-500 mt-1 truncate">{{ destinationCity }}</p>
+              </div>
             </div>
           </div>
 
-          <!-- Divider with dots -->
-          <div class="relative my-4">
-            <div class="border-t border-dashed border-gray-200"></div>
-            <div class="absolute -left-6 -top-3 w-6 h-6 bg-emerald-50 rounded-r-full"></div>
-            <div class="absolute -right-6 -top-3 w-6 h-6 bg-emerald-50 rounded-l-full"></div>
+          <!-- Perforasi -->
+          <div class="relative mx-6 my-2">
+            <div class="border-t-2 border-dashed border-gray-200" />
+            <div class="absolute -left-9 -top-3 w-6 h-6 bg-gray-50 rounded-full border-r border-gray-100" />
+            <div class="absolute -right-9 -top-3 w-6 h-6 bg-gray-50 rounded-full border-l border-gray-100" />
           </div>
 
-          <!-- Detail Grid -->
-          <div class="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Penumpang</p>
-              <p class="font-semibold text-gray-800">{{ passengerCount }} Orang</p>
+          <!-- Detail -->
+          <div class="px-6 py-5">
+            <div class="grid grid-cols-2 gap-x-4 gap-y-5">
+              <div class="flex items-start gap-3">
+                <span class="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
+                  <Users class="w-4 h-4 text-teal" />
+                </span>
+                <div>
+                  <p class="text-[11px] uppercase tracking-widest text-gray-400 font-semibold">Penumpang</p>
+                  <p class="font-bold text-gray-900 mt-0.5">{{ passengerCount }} Orang</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <span class="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
+                  <component :is="methodIcon" class="w-4 h-4 text-teal" />
+                </span>
+                <div>
+                  <p class="text-[11px] uppercase tracking-widest text-gray-400 font-semibold">Metode Bayar</p>
+                  <p class="font-bold text-gray-900 mt-0.5 capitalize">{{ paymentMethodLabel }}</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <span class="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
+                  <CalendarCheck class="w-4 h-4 text-teal" />
+                </span>
+                <div>
+                  <p class="text-[11px] uppercase tracking-widest text-gray-400 font-semibold">Tanggal Bayar</p>
+                  <p class="font-bold text-gray-900 mt-0.5">{{ paymentDate }}</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <span class="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
+                  <Receipt class="w-4 h-4 text-teal" />
+                </span>
+                <div>
+                  <p class="text-[11px] uppercase tracking-widest text-gray-400 font-semibold">Total Bayar</p>
+                  <p class="font-bold text-teal text-lg leading-tight mt-0.5">Rp {{ formattedTotal }}</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Metode Bayar</p>
-              <p class="font-semibold text-gray-800 capitalize">{{ paymentMethodLabel }}</p>
+          </div>
+
+          <!-- Barcode -->
+          <div class="bg-gray-50 px-6 py-4 border-t border-gray-100">
+            <div class="flex gap-[3px] justify-center" aria-hidden="true">
+              <div
+                v-for="(bar, i) in barcodeBars"
+                :key="i"
+                class="bg-gray-800 rounded-[1px]"
+                :style="{ width: bar.w + 'px', height: bar.h + 'px' }"
+              />
             </div>
-            <div>
-              <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Tanggal Bayar</p>
-              <p class="font-semibold text-gray-800">{{ paymentDate }}</p>
-            </div>
-            <div>
-              <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Total Bayar</p>
-              <p class="font-semibold text-blue-600 text-lg">Rp {{ formattedTotal }}</p>
-            </div>
+            <p class="text-center text-[11px] font-mono text-gray-400 mt-2 tracking-[0.3em]">{{ pnrCode }}</p>
           </div>
         </div>
 
-        <!-- Barcode Footer -->
-        <div class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-100">
-          <div class="flex gap-1">
-            <div v-for="i in 28" :key="i"
-              class="w-1 rounded-sm bg-gray-800"
-              :style="{ height: (Math.random() > 0.5 ? 28 : 20) + 'px' }"
-            ></div>
-          </div>
-          <p class="text-xs font-mono text-gray-400 ml-4">{{ pnrCode }}-{{ transactionId }}</p>
+        <!-- Langkah selanjutnya -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+          <h2 class="font-bold text-gray-900 mb-4">Langkah selanjutnya</h2>
+          <ol class="space-y-4">
+            <li v-for="(step, idx) in nextSteps" :key="step.title" class="flex items-start gap-3">
+              <div class="flex flex-col items-center shrink-0">
+                <span class="w-9 h-9 rounded-xl bg-navy flex items-center justify-center">
+                  <component :is="step.icon" class="w-4 h-4 text-white" />
+                </span>
+                <span v-if="idx < nextSteps.length - 1" class="w-px h-5 bg-gray-200 mt-1" />
+              </div>
+              <div class="pt-1">
+                <p class="font-semibold text-gray-900 text-sm">{{ step.title }}</p>
+                <p class="text-sm text-gray-500 mt-0.5">{{ step.desc }}</p>
+              </div>
+            </li>
+          </ol>
         </div>
-      </div>
 
-      <!-- Info Box -->
-      <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 flex items-start gap-3">
-        <span class="text-blue-500 text-xl flex-shrink-0">ℹ️</span>
-        <div class="text-sm text-blue-700">
-          <p class="font-semibold mb-1">Apa selanjutnya?</p>
-          <ul class="space-y-1 list-disc list-inside">
-            <li>E-Tiket akan dikirim ke email kamu</li>
-            <li>Tunjukkan kode PNR di check-in counter</li>
-            <li>Tiba di bandara minimal 2 jam sebelum keberangkatan</li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="space-y-3">
-        <button
-          @click="downloadTicket"
-          class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors shadow-md hover:shadow-lg"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-          </svg>
-          Download E-Tiket
-        </button>
-
-        <div class="grid grid-cols-2 gap-3">
+        <!-- Aksi -->
+        <div class="space-y-3">
           <button
-            @click="goToMyBookings"
-            class="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded-xl border border-gray-200 transition-colors"
+            type="button"
+            @click="downloadDoc('eticket')"
+            :disabled="downloading !== ''"
+            class="w-full flex items-center justify-center gap-2 bg-teal hover:bg-teal-600 disabled:opacity-70 text-white font-bold py-3.5 px-6 rounded-2xl transition-all shadow-lg shadow-teal/25 active:scale-[0.99]"
           >
-            📋 Pesanan Saya
+            <LoaderCircle v-if="downloading === 'eticket'" class="w-5 h-5 animate-spin" />
+            <Download v-else class="w-5 h-5" />
+            {{ downloading === 'eticket' ? 'Menyiapkan PDF...' : 'Unduh E-Tiket (PDF)' }}
           </button>
+
+          <div class="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              @click="goToMyBookings"
+              class="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded-2xl border border-gray-200 transition-colors"
+            >
+              <ClipboardList class="w-5 h-5 text-gray-500" />
+              Pesanan Saya
+            </button>
+            <button
+              type="button"
+              @click="goToHome"
+              class="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded-2xl border border-gray-200 transition-colors"
+            >
+              <House class="w-5 h-5 text-gray-500" />
+              Halaman Utama
+            </button>
+          </div>
+
           <button
-            @click="goToHome"
-            class="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded-xl border border-gray-200 transition-colors"
+            type="button"
+            @click="downloadDoc('invoice')"
+            :disabled="downloading !== ''"
+            class="w-full flex items-center justify-center gap-2 text-sm font-semibold text-teal hover:text-teal-600 disabled:opacity-60 transition-colors py-1"
           >
-            🏠 Halaman Utama
+            <LoaderCircle v-if="downloading === 'invoice'" class="w-4 h-4 animate-spin" />
+            <Receipt v-else class="w-4 h-4" />
+            {{ downloading === 'invoice' ? 'Menyiapkan invoice...' : 'Unduh invoice pembayaran' }}
           </button>
         </div>
-      </div>
 
-      <!-- Share -->
-      <div class="text-center mt-6">
-        <p class="text-sm text-gray-400">Bagikan perjalananmu</p>
-        <div class="flex justify-center gap-4 mt-2">
-          <button @click="share('whatsapp')" class="text-green-500 hover:text-green-600 text-2xl transition-transform hover:scale-110">💬</button>
-          <button @click="share('instagram')" class="text-pink-500 hover:text-pink-600 text-2xl transition-transform hover:scale-110">📸</button>
-          <button @click="share('twitter')" class="text-blue-400 hover:text-blue-500 text-2xl transition-transform hover:scale-110">🐦</button>
-        </div>
       </div>
-
-    </div>
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { router } from '@inertiajs/vue3'
+import { Head, router } from '@inertiajs/vue3'
+import Navbar from '@/Components/Landing/Navbar.vue'
+import {
+  Plane,
+  Check,
+  Copy,
+  Download,
+  LoaderCircle,
+  BadgeCheck,
+  Users,
+  CalendarCheck,
+  Receipt,
+  CreditCard,
+  Landmark,
+  Wallet,
+  MailCheck,
+  QrCode,
+  Clock,
+  ClipboardList,
+  House,
+} from 'lucide-vue-next'
 
 const props = defineProps<{
   pnrCode?: string
@@ -169,7 +249,7 @@ const props = defineProps<{
 }>()
 
 // ─── State ───────────────────────────────────────────────────────────────────
-const pnrCode = ref(props.pnrCode || 'JLJ-' + Math.random().toString(36).substring(2, 8).toUpperCase())
+const pnrCode = ref(props.pnrCode || '')
 const totalAmount = ref(props.totalAmount || 0)
 const flightNumber = ref(props.flightNumber || '-')
 const passengerCount = ref(props.passengerCount || 1)
@@ -177,8 +257,9 @@ const paymentMethod = ref(props.paymentMethod || 'credit_card')
 const originCode = ref(props.originCode || 'CGK')
 const originCity = ref(props.originCity || 'Jakarta')
 const destinationCode = ref(props.destinationCode || 'DPS')
-const destinationCity = ref(props.destinationCity || 'Bali')
-const transactionId = ref(Math.random().toString(36).substring(2, 10).toUpperCase())
+const destinationCity = ref(props.destinationCity || 'Denpasar')
+const pnrCopied = ref(false)
+const downloading = ref<'' | 'eticket' | 'invoice'>('')
 
 // ─── Computed ────────────────────────────────────────────────────────────────
 const formattedTotal = computed(() =>
@@ -188,9 +269,10 @@ const formattedTotal = computed(() =>
 const paymentDate = computed(() => {
   return new Date().toLocaleDateString('id-ID', {
     day: 'numeric', month: 'long', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
   })
 })
+
+const airlineName = computed(() => 'Jelajahin Airlines')
 
 const paymentMethodLabel = computed(() => {
   const labels: Record<string, string> = {
@@ -204,11 +286,46 @@ const paymentMethodLabel = computed(() => {
   return labels[paymentMethod.value] || paymentMethod.value
 })
 
+const methodIcon = computed(() => {
+  if (paymentMethod.value === 'bank_transfer' || paymentMethod.value === 'bank') return Landmark
+  if (paymentMethod.value === 'ewallet') return Wallet
+  return CreditCard
+})
+
+const nextSteps = [
+  { icon: MailCheck, title: 'Cek email kamu', desc: 'E-tiket dan invoice telah dikirim ke email terdaftar.' },
+  { icon: QrCode, title: 'Siapkan kode PNR', desc: 'Tunjukkan kode pemesanan beserta identitas saat check-in.' },
+  { icon: Clock, title: 'Datang lebih awal', desc: 'Tiba di bandara minimal 2 jam sebelum keberangkatan.' },
+]
+
+// Barcode deterministik dari PNR (stabil antar render)
+const barcodeBars = computed(() => {
+  const src = pnrCode.value || 'JELAJAHIN'
+  let hash = 0
+  for (const ch of src) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0
+  const bars: Array<{ w: number; h: number }> = []
+  let seed = hash || 7
+  for (let i = 0; i < 42; i++) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff
+    bars.push({ w: 1 + (seed % 4), h: seed % 3 === 0 ? 22 : 30 })
+  }
+  return bars
+})
+
 // ─── Actions ─────────────────────────────────────────────────────────────────
-const downloadTicket = () => {
-  // Trigger download e-ticket dari backend
-  const url = `/booking/eticket/${pnrCode.value}`
-  window.open(url, '_blank')
+const copyPnr = async () => {
+  try {
+    await navigator.clipboard.writeText(pnrCode.value)
+    pnrCopied.value = true
+    setTimeout(() => { pnrCopied.value = false }, 2000)
+  } catch { /* clipboard tidak tersedia */ }
+}
+
+const downloadDoc = (doc: 'eticket' | 'invoice') => {
+  if (downloading.value !== '' || !pnrCode.value) return
+  downloading.value = doc
+  window.open(route('booking.documents', { pnr: pnrCode.value, doc }), '_blank')
+  setTimeout(() => { downloading.value = '' }, 3000)
 }
 
 const goToMyBookings = () => {
@@ -219,39 +336,34 @@ const goToHome = () => {
   router.visit('/')
 }
 
-const share = (platform: string) => {
-  const text = `✈️ Aku baru beli tiket ke ${destinationCity.value} dengan Jelajahin! Kode booking: ${pnrCode.value}`
-  const encodedText = encodeURIComponent(text)
-  const urls: Record<string, string> = {
-    whatsapp: `https://wa.me/?text=${encodedText}`,
-    twitter: `https://twitter.com/intent/tweet?text=${encodedText}`,
-    instagram: `https://instagram.com/`,
-  }
-  window.open(urls[platform] || '#', '_blank')
-}
-
 // ─── Init ────────────────────────────────────────────────────────────────────
 onMounted(() => {
-  // Jika ada data dari sessionStorage (fallback)
   const session = sessionStorage.getItem('pendingBooking')
   if (session && !props.totalAmount) {
-    const data = JSON.parse(session)
-    totalAmount.value = data.totalAmount || 0
+    try {
+      const data = JSON.parse(session)
+      totalAmount.value = data.totalAmount || 0
+    } catch { /* abaikan */ }
   }
-
-  // Bersihkan session setelah berhasil
   sessionStorage.removeItem('pendingBooking')
   sessionStorage.removeItem('selectedSeats')
 })
 </script>
 
 <style scoped>
-@keyframes bounce-once {
-  0%, 100% { transform: translateY(0); }
-  30% { transform: translateY(-20px); }
-  60% { transform: translateY(-10px); }
+@keyframes pop-in {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
-.animate-bounce-once {
-  animation: bounce-once 0.8s ease-out forwards;
+.animate-pop-in {
+  animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes ping-once {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+.animate-ping-once {
+  animation: ping-once 0.8s ease-out 0.2s both;
 }
 </style>

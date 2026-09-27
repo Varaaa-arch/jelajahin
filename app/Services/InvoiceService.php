@@ -35,7 +35,7 @@ class InvoiceService
             'tax_amount' => $booking->tax_amount,
             'discount_amount' => $booking->discount_amount,
             'total_amount' => $booking->total_price,
-            'status' => 'unpaid',
+            'status' => 'issued',
             'invoice_url' => $invoiceUrl,
         ]);
 
@@ -126,10 +126,12 @@ class InvoiceService
         $data = [
             'invoice_number' => $invoiceNumber,
             'invoice_date' => $invoiceDate->format('d M Y'),
+            'due_date' => $invoiceDate->copy()->addDays(1)->format('d M Y'),
             'pnr_code' => $booking->pnr_code,
             'flight_number' => $flight->flight_number,
             'departure_date' => $flight->departure_date->format('d M Y'),
             'passenger_count' => $passengers->count(),
+            'base_amount' => $booking->base_amount,
             'subtotal' => $booking->base_amount,
             'tax_amount' => $booking->tax_amount,
             'discount_amount' => $booking->discount_amount,
@@ -138,7 +140,8 @@ class InvoiceService
         ];
         $pdf = Pdf::loadView('invoice', $data);
 
-        $filename = "invoice_{$invoiceNumber}.pdf";
+        // Nomor invoice mengandung '/' — sanitasi agar aman jadi nama file
+        $filename = 'invoice_' . str_replace('/', '-', $invoiceNumber) . '.pdf';
         $path = "invoices/{$booking->id}/{$filename}";
         
         if (!is_dir(storage_path("app/public/invoices/{$booking->id}"))) {

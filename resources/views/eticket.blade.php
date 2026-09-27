@@ -135,13 +135,13 @@
                 <div class="flight-info">
                     <div class="route">
                         <div class="airport">
-                            <div class="airport-code">CGK</div>
+                            <div class="airport-code">{{ $origin_code ?? 'CGK' }}</div>
                             <div class="airport-time">{{ $departure_time }}</div>
                             <div class="airport-time">{{ $departure_date }}</div>
                         </div>
                         <div class="arrow">✈</div>
                         <div class="airport">
-                            <div class="airport-code">DPS</div>
+                            <div class="airport-code">{{ $destination_code ?? 'DPS' }}</div>
                             <div class="airport-time">{{ $arrival_time }}</div>
                             <div class="airport-time">{{ $departure_date }}</div>
                         </div>

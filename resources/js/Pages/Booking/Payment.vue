@@ -33,7 +33,10 @@
             </svg>
           </div>
           <h1 class="text-2xl font-bold text-gray-900">Pembayaran Aman</h1>
-          <p class="text-sm text-gray-500 mt-1">🔒 Pembayaran dilindungi enkripsi SSL 256-bit</p>
+          <p class="text-sm text-gray-500 mt-1 flex items-center justify-center gap-1.5">
+            <Lock class="w-3.5 h-3.5 text-gray-400" />
+            Pembayaran dilindungi enkripsi SSL 256-bit
+          </p>
         </div>
 
         <div class="flex flex-col lg:flex-row gap-6 items-start">
@@ -52,7 +55,7 @@
                 </div>
               </div>
               <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between text-sm text-gray-600">
-                <span>✈ {{ flightNumber || '—' }}</span>
+                <span class="flex items-center gap-1.5"><Plane class="w-4 h-4 text-gray-400" /> {{ flightNumber || '—' }}</span>
                 <span>{{ passengerCount }} Penumpang</span>
               </div>
             </div>
@@ -63,9 +66,9 @@
                   v-for="tab in paymentTabs"
                   :key="tab.id"
                   @click="activeTab = tab.id"
-                  :class="['flex-1 py-4 text-sm font-semibold transition-all', activeTab === tab.id ? 'text-teal border-b-2 border-teal bg-teal-50' : 'text-gray-500 hover:text-gray-700']"
+                  :class="['flex-1 py-4 text-sm font-semibold transition-all flex items-center justify-center gap-1.5', activeTab === tab.id ? 'text-teal border-b-2 border-teal bg-teal-50' : 'text-gray-500 hover:text-gray-700']"
                 >
-                  <span class="mr-1">{{ tab.icon }}</span> {{ tab.label }}
+                  <component :is="tab.icon" class="w-4 h-4" /> {{ tab.label }}
                 </button>
               </div>
 
@@ -75,7 +78,7 @@
                   <div class="absolute inset-0 opacity-20 bg-gradient-to-br from-white to-transparent pointer-events-none"></div>
                   <div class="flex justify-between items-start mb-6">
                     <span class="text-lg font-bold tracking-widest">JELAJAHIN</span>
-                    <span class="text-2xl">{{ cardNetworkIcon }}</span>
+                    <span class="text-[10px] font-bold tracking-widest px-2 py-1 rounded-md bg-white/20">{{ cardNetworkLabel }}</span>
                   </div>
                   <p class="font-mono text-xl tracking-widest mb-4">{{ maskedCardNumber }}</p>
                   <div class="flex justify-between text-sm">
@@ -134,9 +137,16 @@
                   <p class="text-xs text-gray-500 mb-1">Nomor Virtual Account</p>
                   <div class="flex items-center justify-between gap-3">
                     <p class="font-mono text-xl font-bold text-gray-900 tracking-wider truncate">{{ virtualAccountNumber }}</p>
-                    <button @click="copyVA" class="text-teal text-sm font-semibold hover:text-teal-700 shrink-0">{{ vaCopied ? '✓ Copied!' : 'Copy' }}</button>
+                    <button @click="copyVA" class="text-teal text-sm font-semibold hover:text-teal-700 shrink-0 flex items-center gap-1">
+                      <Copy v-if="!vaCopied" class="w-4 h-4" />
+                      <Check v-else class="w-4 h-4" />
+                      {{ vaCopied ? 'Copied!' : 'Copy' }}
+                    </button>
                   </div>
-                  <p class="text-xs text-amber-600 mt-2">⏱ Bayar dalam 24 jam sebelum kedaluwarsa</p>
+                  <p class="text-xs text-amber-600 mt-2 flex items-center gap-1.5">
+                    <Clock class="w-3.5 h-3.5 shrink-0" />
+                    Bayar dalam 24 jam sebelum kedaluwarsa
+                  </p>
                 </div>
               </div>
 
@@ -146,9 +156,11 @@
                 <div class="grid grid-cols-2 gap-3">
                   <label v-for="wallet in ewalletOptions" :key="wallet.id" :class="['flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all', selectedWallet === wallet.id ? 'border-teal bg-teal-50' : 'border-gray-200 hover:border-gray-300']">
                     <input type="radio" :value="wallet.id" v-model="selectedWallet" class="sr-only" />
-                    <span class="text-3xl mb-2">{{ wallet.icon }}</span>
+                    <span class="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-white text-sm mb-2" :class="wallet.color">{{ wallet.initials }}</span>
                     <span class="font-semibold text-sm text-gray-700">{{ wallet.name }}</span>
-                    <span v-if="selectedWallet === wallet.id" class="mt-1 text-teal text-xs font-semibold">✓ Dipilih</span>
+                    <span v-if="selectedWallet === wallet.id" class="mt-1 text-teal text-xs font-semibold flex items-center gap-1">
+                      <Check class="w-3.5 h-3.5" /> Dipilih
+                    </span>
                   </label>
                 </div>
                 <div v-if="selectedWallet" class="mt-4">
@@ -170,14 +182,17 @@
               <p class="text-gray-500 text-sm mb-6">Mohon tunggu, jangan tutup halaman ini</p>
               <div class="text-left space-y-3 max-w-xs mx-auto">
                 <div v-for="(step, idx) in processingSteps" :key="idx" class="flex items-center gap-3">
-                  <div :class="['w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0', processingIndex > idx ? 'bg-green-500 text-white' : processingIndex === idx ? 'bg-teal text-white animate-pulse' : 'bg-gray-200 text-gray-400']">{{ processingIndex > idx ? '✓' : idx + 1 }}</div>
+                  <div :class="['w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0', processingIndex > idx ? 'bg-green-500 text-white' : processingIndex === idx ? 'bg-teal text-white animate-pulse' : 'bg-gray-200 text-gray-400']">
+                    <Check v-if="processingIndex > idx" class="w-3.5 h-3.5" />
+                    <span v-else>{{ idx + 1 }}</span>
+                  </div>
                   <span :class="['text-sm', processingIndex >= idx ? 'text-gray-900 font-medium' : 'text-gray-400']">{{ step }}</span>
                 </div>
               </div>
             </div>
 
             <div v-if="errorMessage" class="bg-red-50 border border-red-200 rounded-xl p-4 mt-4 flex items-start gap-3">
-              <span class="text-red-500 text-xl shrink-0">⚠</span>
+              <TriangleAlert class="text-red-500 w-5 h-5 shrink-0" />
               <p class="text-sm text-red-700">{{ errorMessage }}</p>
             </div>
 
@@ -187,7 +202,9 @@
                 <span>Bayar</span><span class="bg-white/20 px-2 py-0.5 rounded-lg text-sm">Rp {{ formatPrice(totalAmount) }}</span>
               </button>
             </div>
-            <p v-if="currentStep === 'form'" class="text-center text-xs text-gray-400 mt-3">🔒 Enkripsi 256-bit • Aman & Terpercaya</p>
+            <p v-if="currentStep === 'form'" class="text-center text-xs text-gray-400 mt-3 flex items-center justify-center gap-1.5">
+              <Lock class="w-3.5 h-3.5" /> Enkripsi 256-bit • Aman & Terpercaya
+            </p>
           </div>
 
           <!-- Right: Ringkasan -->
@@ -206,7 +223,7 @@
                 </div>
                 <div class="pt-3 border-t border-gray-100 flex justify-between text-sm">
                   <span class="text-gray-500">Penerbangan</span>
-                  <span class="font-semibold text-gray-900">✈ {{ flightNumber || '—' }}</span>
+                  <span class="font-semibold text-gray-900 flex items-center gap-1.5"><Plane class="w-4 h-4 text-gray-400" /> {{ flightNumber || '—' }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
                   <span class="text-gray-500">Penumpang</span>
@@ -220,13 +237,13 @@
               </div>
               <div class="px-5 pb-5">
                 <div class="bg-teal-50 border border-teal-100 rounded-xl p-3 flex gap-2">
-                  <span class="text-teal">🛡️</span>
+                  <ShieldCheck class="text-teal w-4 h-4 shrink-0 mt-0.5" />
                   <p class="text-xs text-teal-800 leading-relaxed">Jaminan harga tetap & refund fleksibel. E-tiket dikirim ke email setelah pembayaran.</p>
                 </div>
               </div>
             </div>
             <div class="mt-4 flex items-center justify-center gap-4 text-xs text-gray-400">
-              <span>🔒 SSL</span><span>•</span><span>Visa</span><span>•</span><span>Mastercard</span><span>•</span><span>BCA</span>
+              <span class="flex items-center gap-1"><Lock class="w-3.5 h-3.5" /> SSL</span><span>•</span><span>Visa</span><span>•</span><span>Mastercard</span><span>•</span><span>BCA</span>
             </div>
           </div>
         </div>
@@ -240,6 +257,18 @@ import { ref, computed, onMounted } from 'vue'
 import { router } from '@inertiajs/vue3'
 import Navbar from '@/Components/Landing/Navbar.vue'
 import { httpClient } from '@/utils/http'
+import {
+  Lock,
+  Plane,
+  CreditCard,
+  Landmark,
+  Wallet,
+  Check,
+  Clock,
+  TriangleAlert,
+  ShieldCheck,
+  Copy,
+} from 'lucide-vue-next'
 
 const props = defineProps<{
   bookingId?: string
@@ -248,6 +277,10 @@ const props = defineProps<{
   flightNumber?: string
   passengerCount?: number
   paymentMethod?: string
+  originCode?: string
+  originCity?: string
+  destinationCode?: string
+  destinationCity?: string
 }>()
 
 const steps = [
@@ -263,11 +296,15 @@ const errorMessage = ref('')
 const orderId = ref(props.pnrCode || 'JLJ-' + Math.random().toString(36).substring(2, 8).toUpperCase())
 const totalAmount = ref(props.totalAmount || 0)
 
-const activeTab = ref<'card' | 'bank' | 'ewallet'>(() => {
+type PaymentTabId = 'card' | 'bank' | 'ewallet'
+
+const resolveInitialTab = (): PaymentTabId => {
   if (props.paymentMethod === 'bank_transfer') return 'bank'
   if (props.paymentMethod === 'ewallet') return 'ewallet'
   return 'card'
-})
+}
+
+const activeTab = ref<PaymentTabId>(resolveInitialTab())
 
 const cardForm = ref({ number: '', name: '', expiry: '', cvv: '' })
 const selectedBank = ref('')
@@ -282,10 +319,10 @@ const processingSteps = [
   'Mengkonfirmasi pembayaran',
 ]
 
-const paymentTabs = [
-  { id: 'card', label: 'Kartu', icon: '💳' },
-  { id: 'bank', label: 'Transfer Bank', icon: '🏦' },
-  { id: 'ewallet', label: 'E-Wallet', icon: '📱' },
+const paymentTabs: Array<{ id: PaymentTabId; label: string; icon: typeof CreditCard }> = [
+  { id: 'card', label: 'Kartu', icon: CreditCard },
+  { id: 'bank', label: 'Transfer Bank', icon: Landmark },
+  { id: 'ewallet', label: 'E-Wallet', icon: Wallet },
 ]
 
 const bankOptions = [
@@ -296,10 +333,10 @@ const bankOptions = [
 ]
 
 const ewalletOptions = [
-  { id: 'gopay', name: 'GoPay', icon: '🟢' },
-  { id: 'ovo', name: 'OVO', icon: '🟣' },
-  { id: 'dana', name: 'DANA', icon: '🔵' },
-  { id: 'shopeepay', name: 'ShopeePay', icon: '🔴' },
+  { id: 'gopay', name: 'GoPay', initials: 'GP', color: 'bg-emerald-500' },
+  { id: 'ovo', name: 'OVO', initials: 'OV', color: 'bg-purple-500' },
+  { id: 'dana', name: 'DANA', initials: 'DA', color: 'bg-sky-500' },
+  { id: 'shopeepay', name: 'ShopeePay', initials: 'SP', color: 'bg-orange-500' },
 ]
 
 const maskedCardNumber = computed(() => {
@@ -314,12 +351,12 @@ const maskedCardNumber = computed(() => {
   return parts.join(' ')
 })
 
-const cardNetworkIcon = computed(() => {
+const cardNetworkLabel = computed(() => {
   const num = cardForm.value.number.replace(/\s/g, '')
-  if (num.startsWith('4')) return '💳'
-  if (num.startsWith('5')) return '🔴'
-  if (num.startsWith('3')) return '🟦'
-  return '💳'
+  if (num.startsWith('4')) return 'VISA'
+  if (num.startsWith('5')) return 'MC'
+  if (num.startsWith('3')) return 'AMEX'
+  return 'CARD'
 })
 
 const cardPreviewClass = computed(() => {
@@ -389,11 +426,25 @@ const processPayment = async () => {
     }
     router.visit('/booking/success', {
       method: 'get',
-      data: { pnr: props.pnrCode || orderId.value, method: activeTab.value },
+      data: {
+        pnr: props.pnrCode || orderId.value,
+        method: activeTab.value,
+        total: totalAmount.value,
+        flight: props.flightNumber || '',
+        passengers: props.passengerCount || 1,
+        origin: props.originCode || 'CGK',
+        originCity: props.originCity || 'Jakarta',
+        destination: props.destinationCode || 'DPS',
+        destinationCity: props.destinationCity || 'Denpasar',
+      },
     })
   } catch (err: any) {
     currentStep.value = 'form'
-    errorMessage.value = 'Pembayaran gagal diproses. Silakan coba lagi atau hubungi support.'
+    const serverMsg: string = err?.response?.data?.error || err?.response?.data?.message || ''
+    errorMessage.value = serverMsg
+      ? `Pembayaran gagal: ${serverMsg}`
+      : 'Pembayaran gagal diproses. Silakan coba lagi atau hubungi support.'
+    console.error('[processPayment] gagal', err?.response?.data || err?.message)
   }
 }
 

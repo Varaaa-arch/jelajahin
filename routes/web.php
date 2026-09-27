@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BookingDocumentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -89,6 +90,10 @@ Route::get('/booking/payment', function () {
         'flightNumber'   => request('flight'),
         'passengerCount' => (int) request('passengers', 1),
         'paymentMethod'  => request('method', 'credit_card'),
+        'originCode'     => request('origin', 'CGK'),
+        'originCity'     => request('originCity', 'Jakarta'),
+        'destinationCode'=> request('destination', 'DPS'),
+        'destinationCity'=> request('destinationCity', 'Denpasar'),
     ]);
 })->name('booking.payment');
 
@@ -105,6 +110,10 @@ Route::get('/booking/success', function () {
         'destinationCity'=> request('destinationCity', 'Bali'),
     ]);
 })->name('booking.success');
+
+Route::get('/booking/documents/{pnr}', [BookingDocumentController::class, 'download'])
+    ->middleware('auth')
+    ->name('booking.documents');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

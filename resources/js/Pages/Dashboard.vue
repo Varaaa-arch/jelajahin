@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Download, Receipt, Ticket, Search, X } from 'lucide-vue-next';
 
 interface BookingFragment {
     id: string;
@@ -93,12 +94,63 @@ const paymentMeta = (status: string): { label: string; classes: string } => {
 
 const documents = computed<BookingFragment[]>(() =>
     [...props.upcoming, ...props.history].filter(
-        (b) => b.eticket_count > 0 || b.invoice !== null
+        (b) => b.eticket_count > 0 || b.invoice !== null || canDownload(b)
     )
 );
 
 const toggleExpanded = (id: string): void => {
     expanded.value[id] = !expanded.value[id];
+};
+
+const openDocument = (pnr: string, doc: 'eticket' | 'invoice'): void => {
+    window.open(route('booking.documents', { pnr, doc }), '_blank');
+};
+
+const canDownload = (b: BookingFragment): boolean =>
+    b.status === 'confirmed' || b.status === 'completed';
+
+// ─── Riwayat: search + filter status ─────────────────────────────────────────
+const historyQuery = ref('');
+const historyStatus = ref('all');
+
+const historyStatusOptions = computed(() => {
+    const counts = new Map<string, number>();
+    for (const b of props.history) counts.set(b.status, (counts.get(b.status) ?? 0) + 1);
+    return [
+        { value: 'all', label: 'Semua', count: props.history.length },
+        ...[...counts.entries()].map(([value, count]) => ({
+            value,
+            label: statusMeta(value).label,
+            count,
+        })),
+    ];
+});
+
+const filteredHistory = computed(() => {
+    const q = historyQuery.value.trim().toLowerCase();
+    return props.history.filter((b) => {
+        if (historyStatus.value !== 'all' && b.status !== historyStatus.value) return false;
+        if (!q) return true;
+        const hay = [
+            b.pnr_code,
+            b.flight.flight_number,
+            b.flight.airline,
+            b.flight.origin,
+            b.flight.origin_airport,
+            b.flight.destination,
+            b.flight.destination_airport,
+            ...b.passengers,
+        ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+        return hay.includes(q);
+    });
+});
+
+const clearHistoryFilter = (): void => {
+    historyQuery.value = '';
+    historyStatus.value = 'all';
 };
 
 const statsCards = computed(() => [
@@ -323,6 +375,10 @@ const statsCards = computed(() => [
                                         flight: booking.flight.flight_number,
                                         passengers: booking.passenger_count,
                                         method: 'credit_card',
+                                        origin: booking.flight.origin_airport,
+                                        originCity: booking.flight.origin,
+                                        destination: booking.flight.destination_airport,
+                                        destinationCity: booking.flight.destination,
                                     })"
                                     class="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-amber-600"
                                 >
@@ -494,18 +550,98 @@ const statsCards = computed(() => [
                             </span>
                         </div>
                     </div>
+
+                    <div
+                        v-if="canDownload(booking)"
+                        class="flex flex-wrap items-center gap-2 border-t border-gray-100 px-6 py-4"
+                    >
+                        <button
+                            type="button"
+                            @click="openDocument(booking.pnr_code, 'eticket')"
+                            class="inline-flex items-center gap-2 rounded-xl bg-navy px-4 py-2.5 text-xs font-bold text-white transition hover:bg-navy-mid"
+                        >
+                            <Ticket class="h-4 w-4" />
+                            Unduh E-Tiket (PDF)
+                        </button>
+                        <button
+                            type="button"
+                            @click="openDocument(booking.pnr_code, 'invoice')"
+                            class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 transition hover:border-teal hover:text-teal"
+                        >
+                            <Receipt class="h-4 w-4" />
+                            Unduh Invoice
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- History -->
         <section v-if="history.length > 0" class="mt-10">
-            <h2 class="text-xl font-black tracking-tight text-gray-900">
-                Riwayat Pemesanan
-            </h2>
-            <div class="mt-5 space-y-3">
+            <div class="flex flex-wrap items-end justify-between gap-3">
+                <h2 class="text-xl font-black tracking-tight text-gray-900">
+                    Riwayat Pemesanan
+                </h2>
+                <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-500">
+                    {{ filteredHistory.length }} dari {{ history.length }}
+                </span>
+            </div>
+
+            <!-- Search + filter status -->
+            <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div class="relative flex-1">
+                    <Search class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                        v-model="historyQuery"
+                        type="text"
+                        placeholder="Cari PNR, maskapai, kota, atau penumpang..."
+                        class="w-full rounded-2xl border border-gray-200 bg-white py-2.5 pl-10 pr-10 text-sm text-gray-800 placeholder:text-gray-400 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
+                    />
+                    <button
+                        v-if="historyQuery"
+                        type="button"
+                        @click="historyQuery = ''"
+                        aria-label="Bersihkan pencarian"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                        <X class="h-4 w-4" />
+                    </button>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button
+                        v-for="opt in historyStatusOptions"
+                        :key="opt.value"
+                        type="button"
+                        @click="historyStatus = opt.value"
+                        :class="[
+                            'rounded-full px-3.5 py-1.5 text-xs font-bold transition',
+                            historyStatus === opt.value
+                                ? 'bg-navy text-white'
+                                : 'bg-white text-gray-500 border border-gray-200 hover:border-gray-300',
+                        ]"
+                    >
+                        {{ opt.label }} ({{ opt.count }})
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="filteredHistory.length === 0" class="mt-4">
+                <div class="flex flex-col items-center rounded-3xl border border-dashed border-gray-200 bg-white px-6 py-10 text-center">
+                    <p class="font-bold text-gray-700">Tidak ada hasil yang cocok</p>
+                    <p class="mt-1 text-sm text-gray-500">Coba kata kunci atau filter lain.</p>
+                    <button
+                        type="button"
+                        @click="clearHistoryFilter"
+                        class="mt-4 rounded-xl border border-gray-200 px-5 py-2 text-sm font-bold text-gray-600 hover:border-teal hover:text-teal"
+                    >
+                        Reset Pencarian
+                    </button>
+                </div>
+            </div>
+
+            <div v-else class="mt-4 space-y-3">
                 <div
-                    v-for="booking in history"
+                    v-for="booking in filteredHistory"
                     :key="'his-' + booking.id"
                     class="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-gray-100 bg-white px-6 py-5 shadow-sm"
                 >
@@ -526,7 +662,17 @@ const statsCards = computed(() => [
                             </p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <button
+                            v-if="canDownload(booking)"
+                            type="button"
+                            @click="openDocument(booking.pnr_code, 'eticket')"
+                            title="Unduh E-Tiket (PDF)"
+                            aria-label="Unduh E-Tiket"
+                            class="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition hover:border-teal hover:text-teal"
+                        >
+                            <Download class="h-4 w-4" />
+                        </button>
                         <span
                             class="rounded-full px-3 py-1 text-xs font-bold"
                             :class="statusMeta(booking.status).classes"

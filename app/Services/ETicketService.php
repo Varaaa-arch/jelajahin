@@ -19,6 +19,10 @@ class ETicketService
         $flight = $booking->flight;
         $passengers = $booking->passengers;
 
+        if ($passengers->isEmpty()) {
+            throw new \Exception("Booking {$booking->id} has no passengers.");
+        }
+
         $lastETicket = null;
 
         foreach ($passengers as $idx => $passenger) {
@@ -111,6 +115,7 @@ class ETicketService
     private function generatePDF(Booking $booking, $passenger, string $eticketNumber, string $seatNumber): string
     {
         $flight = $booking->flight;
+        $route = $flight?->route;
 
         $data = [
             'eticket_number' => $eticketNumber,
@@ -118,6 +123,8 @@ class ETicketService
             'passenger_name' => "{$passenger->first_name} {$passenger->last_name}",
             'passenger_title' => $passenger->title,
             'flight_number' => $flight->flight_number,
+            'origin_code' => $route?->originAirport?->code ?? 'CGK',
+            'destination_code' => $route?->destinationAirport?->code ?? 'DPS',
             'departure_date' => $flight->departure_date->format('d M Y'),
             'departure_time' => substr($flight->departure_time, 0, 5),
             'arrival_time' => substr($flight->arrival_time, 0, 5),
