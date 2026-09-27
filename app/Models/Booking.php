@@ -27,6 +27,17 @@ class Booking extends Model
         'passenger_count',
         'status',
         'special_requests',
+        'addons',
+        'addons_amount',
+    ];
+
+    protected $casts = [
+        'addons' => 'array',
+        'addons_amount' => 'float',
+        'base_amount' => 'float',
+        'discount_amount' => 'float',
+        'tax_amount' => 'float',
+        'total_price' => 'float',
     ];
 
     public function passengers(): HasMany

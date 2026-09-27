@@ -1,9 +1,19 @@
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001'
+const GO_API_URL = import.meta.env.VITE_GO_API_URL || 'http://localhost:8080'
 
 export const httpClient = axios.create({
   baseURL: API_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
+})
+
+export const goClient = axios.create({
+  baseURL: GO_API_URL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',

@@ -6,6 +6,7 @@ use App\Repositories\BookingRepository;
 use App\Services\BookingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class BookingController extends Controller
@@ -33,6 +34,11 @@ class BookingController extends Controller
             'seat_ids.*'                   => 'required|string',
             'promo_code'                   => 'nullable|string',
             'special_requests'             => 'nullable|string',
+            'addons'                       => 'nullable|array',
+            'addons.baggage'               => 'nullable|in:none,5kg,10kg',
+            'addons.insurance'             => 'nullable|in:none,basic,premium',
+            'addons.meals'                 => 'nullable|array',
+            'addons.meals.*'               => 'nullable|string',
             'passengers'                   => 'required|array|min:1',
             'passengers.*.title'           => 'required|string',
             'passengers.*.first_name'      => 'required|string|max:100',
@@ -48,7 +54,11 @@ class BookingController extends Controller
         try {
             $booking = $this->bookingService->createBooking($validated);
         } catch (\Exception $e) {
-            // Seat lock tidak ditemukan / sudah expired di Redis
+            // Seat lock tidak ditemukan / flight hilang / belum login — fail cepat, jangan hang
+            Log::warning('BookingController::createBooking gagal', [
+                'flight_id' => $validated['flight_id'] ?? null,
+                'error' => $e->getMessage(),
+            ]);
             return response()->json([
                 'message' => $e->getMessage(),
                 'error'   => 'seat_lock_invalid',
@@ -67,6 +77,8 @@ class BookingController extends Controller
                 'base_amount'      => $booking->base_amount,
                 'discount_amount'  => $booking->discount_amount,
                 'tax_amount'       => $booking->tax_amount,
+                'addons'           => $booking->addons,
+                'addons_amount'    => $booking->addons_amount,
                 'total_price'      => $booking->total_price,
                 'status'           => $booking->status,
                 'special_requests' => $booking->special_requests,

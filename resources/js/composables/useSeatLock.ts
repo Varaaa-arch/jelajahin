@@ -1,5 +1,5 @@
 import { ref, computed, onUnmounted } from 'vue'
-import { httpClient } from '@/utils/http'
+import { goClient } from '@/utils/http'
 import { usePage } from '@inertiajs/vue3'
 import type { FlightSeat } from '@/types/flight'
 
@@ -50,7 +50,7 @@ export function useSeatLock(flightId: string) {
     seatsLoading.value = true
     seatsError.value = null
     try {
-      const res = await httpClient.get(`/api/v1/flights/${flightId}/seats`)
+      const res = await goClient.get(`/api/v1/flights/${flightId}/seats`)
       seats.value = res.data.data ?? res.data ?? []
     } catch (err: any) {
       seatsError.value = err?.response?.data?.message || 'Gagal memuat data kursi'
@@ -66,7 +66,7 @@ export function useSeatLock(flightId: string) {
     lockError.value = null
 
     try {
-      const res = await httpClient.post('/api/v1/seats/lock', {
+      const res = await goClient.post('/api/v1/seats/lock', {
         flight_id: flightId,
         seat_id: seatId,
         user_id: getUserId(),
@@ -107,7 +107,7 @@ export function useSeatLock(flightId: string) {
 
   const unlockSeat = async (seatId: string, seatNumber: string): Promise<void> => {
     try {
-      await httpClient.post('/api/v1/seats/unlock', {
+      await goClient.post('/api/v1/seats/unlock', {
         flight_id: flightId,
         seat_id: seatId,
         user_id: getUserId(),
@@ -146,7 +146,7 @@ export function useSeatLock(flightId: string) {
   ): Promise<boolean> => {
     lockError.value = null
     try {
-      const res = await httpClient.post('/api/v1/seats/lock-multiple', {
+      const res = await goClient.post('/api/v1/seats/lock-multiple', {
         flight_id: flightId,
         seat_ids: seatList.map(s => s.seatId),
         user_id: getUserId(),
@@ -195,7 +195,7 @@ export function useSeatLock(flightId: string) {
     seatId: string
   ): Promise<{ isLocked: boolean; lockedBy?: string; ttlSeconds?: number }> => {
     try {
-      const res = await httpClient.get(
+      const res = await goClient.get(
         `/api/v1/seats/${flightId}/${seatId}/lock-status`
       )
       return {
@@ -260,7 +260,7 @@ export function useSeatLock(flightId: string) {
     if (skipAutoUnlock.value) return
     const toUnlock = [...selectedSeats.value]
     toUnlock.forEach(s => {
-      httpClient
+      goClient
         .post('/api/v1/seats/unlock', { flight_id: flightId, seat_id: s.seatId, user_id: getUserId() })
         .catch(() => {})
     })

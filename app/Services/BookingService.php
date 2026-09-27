@@ -5,38 +5,69 @@ namespace App\Services;
 use App\Models\Booking;
 use App\Models\Passenger;
 use App\Models\Promo;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
 
 class BookingService
 {
+    public const BAGGAGE_PRICES = ['none' => 0, '5kg' => 150000, '10kg' => 280000];
+    public const INSURANCE_PRICES = ['none' => 0, 'basic' => 45000, 'premium' => 85000];
+
+    public static function getAddonsAmount(?array $addons, int $pax): int
+    {
+        $baggage = $addons['baggage'] ?? 'none';
+        $insurance = $addons['insurance'] ?? 'none';
+        $baggageTotal = self::BAGGAGE_PRICES[$baggage] ?? 0;
+        $insuranceTotal = (self::INSURANCE_PRICES[$insurance] ?? 0) * $pax;
+        return $baggageTotal + $insuranceTotal;
+    }
+
     /**
      * Create booking dengan passengers dan seats yang sudah di-lock
      */
     public function createBooking(array $data): Booking
     {
-        // Validate seat locks dari Redis
+        $t0 = microtime(true);
+        // Validate seat locks dari Redis (di local dibypass agar cepat, lock sudah dijaga Go service)
         $this->validateSeats($data['flight_id'], $data['seats']);
+
+        $addons = $data['addons'] ?? null;
+        $pax = count($data['seats']);
+
+        // Fail-fast: flight harus ada sebelum insert apa pun
+        $flightExists = \App\Models\Flight::where('id', $data['flight_id'])->exists();
+        if (! $flightExists) {
+            throw new \Exception('Flight not found');
+        }
 
         // Calculate total price
         $totalPrice = $this->calculateTotal(
             $data['flight_id'],
-            count($data['seats']),
-            $data['promo_code'] ?? null
+            $pax,
+            $data['promo_code'] ?? null,
+            $addons
         );
 
-        // Create booking
+        // User tegas: session dulu, lalu payload — tanpa fallback User::first()
+        // (fallback itu 1 query ekstra + bisa salah pemilik saat banyak user)
+        $userId = auth()->id() ?? ($data['user_id'] ?? null);
+        if (empty($userId) || ! $this->isValidUuid((string) $userId)) {
+            throw new \Exception('Unauthenticated: silakan masuk dulu sebelum booking.');
+        }
         $booking = Booking::create([
             'pnr_code' => $this->generatePNR(),
-            'user_id' => auth()->id() ?? $data['user_id'],
+            'user_id' => $userId,
             'flight_id' => $data['flight_id'],
             'base_amount' => $totalPrice['base'],
             'discount_amount' => $totalPrice['discount'],
             'tax_amount' => $totalPrice['tax'],
+            'addons_amount' => $totalPrice['addons'],
             'total_price' => $totalPrice['total'],
-            'passenger_count' => count($data['seats']),
+            'passenger_count' => $pax,
             'status' => 'pending',
             'special_requests' => $data['special_requests'] ?? null,
+            'addons' => $addons,
         ]);
 
         // Create passengers
@@ -56,6 +87,12 @@ class BookingService
                 'flight_seat_id' => $this->isValidUuid($data['seat_ids'][$idx] ?? null) ? $data['seat_ids'][$idx] : null,
             ]);
         }
+
+        Log::info('BookingService::createBooking selesai', [
+            'flight_id' => $data['flight_id'],
+            'pax' => $pax,
+            'ms' => (int) ((microtime(true) - $t0) * 1000),
+        ]);
 
         return $booking;
     }
@@ -86,34 +123,26 @@ class BookingService
     }
 
     /**
-     * Calculate total price dengan tax dan diskon
+     * Calculate total price dengan tax, diskon, dan layanan tambahan
      */
-    public function calculateTotal(string $flightId, int $seatCount, ?string $promoCode = null): array
+    public function calculateTotal(string $flightId, int $seatCount, ?string $promoCode = null, ?array $addons = null): array
     {
-        // Get flight base price
         $flight = \App\Models\Flight::find($flightId);
-        if (!$flight) {
+        if (! $flight) {
             throw new \Exception("Flight not found");
         }
 
         $basePrice = $flight->base_price * $seatCount;
-        
-        // Calculate tax (10%)
-        $taxPercentage = 0.10;
-        $tax = $basePrice * $taxPercentage;
-        
-        // Calculate discount (if promo code exists)
-        $discount = 0;
-        if ($promoCode) {
-            $discount = $this->applyPromo($promoCode, $basePrice);
-        }
-
-        $total = $basePrice + $tax - $discount;
+        $tax = $basePrice * 0.10;
+        $discount = $promoCode ? $this->applyPromo($promoCode, $basePrice) : 0;
+        $addonsTotal = self::getAddonsAmount($addons, $seatCount);
+        $total = $basePrice + $tax + $addonsTotal - $discount;
 
         return [
             'base' => round($basePrice, 2),
             'tax' => round($tax, 2),
             'discount' => round($discount, 2),
+            'addons' => round($addonsTotal, 2),
             'total' => round($total, 2),
         ];
     }
