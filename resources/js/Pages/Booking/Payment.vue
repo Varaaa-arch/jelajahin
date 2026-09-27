@@ -74,6 +74,23 @@
 
               <!-- Card -->
               <div v-if="activeTab === 'card'" class="p-6">
+                <div v-if="savedCards.length" class="mb-4">
+                  <p class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Kartu tersimpan</p>
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      v-for="m in savedCards"
+                      :id="`saved-${m.id}`"
+                      :key="m.id"
+                      type="button"
+                      @click="applySavedMethod(m)"
+                      class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 transition hover:border-teal hover:text-teal"
+                    >
+                      {{ m.provider.toUpperCase() }} • {{ m.masked_number }}
+                      <Star v-if="m.is_default" class="w-3 h-3 text-teal-500" />
+                    </button>
+                  </div>
+                  <p class="mt-1.5 text-[11px] text-gray-400">Nama & masa berlaku terisi otomatis, nomor kartu tetap diketik manual.</p>
+                </div>
                 <div class="relative h-44 rounded-2xl p-5 text-white mb-5 overflow-hidden shadow-md" :class="cardPreviewClass">
                   <div class="absolute inset-0 opacity-20 bg-gradient-to-br from-white to-transparent pointer-events-none"></div>
                   <div class="flex justify-between items-start mb-6">
@@ -119,6 +136,23 @@
 
               <!-- Bank -->
               <div v-else-if="activeTab === 'bank'" class="p-6">
+                <div v-if="savedBanks.length" class="mb-4">
+                  <p class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Tersimpan</p>
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      v-for="m in savedBanks"
+                      :id="`saved-${m.id}`"
+                      :key="m.id"
+                      type="button"
+                      @click="applySavedMethod(m)"
+                      :class="['inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition',
+                        selectedBank === m.provider ? 'border-teal bg-teal-50 text-teal-700' : 'border-gray-200 text-gray-600 hover:border-teal']"
+                    >
+                      {{ m.provider.toUpperCase() }} • {{ m.masked_number }}
+                      <Star v-if="m.is_default" class="w-3 h-3 text-teal-500" />
+                    </button>
+                  </div>
+                </div>
                 <p class="text-sm text-gray-500 mb-4">Pilih bank untuk transfer:</p>
                 <div class="space-y-3">
                   <label v-for="bank in bankOptions" :key="bank.id" :class="['flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all', selectedBank === bank.id ? 'border-teal bg-teal-50' : 'border-gray-200 hover:border-gray-300']">
@@ -152,6 +186,23 @@
 
               <!-- E-Wallet -->
               <div v-else-if="activeTab === 'ewallet'" class="p-6">
+                <div v-if="savedWallets.length" class="mb-4">
+                  <p class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Tersimpan</p>
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      v-for="m in savedWallets"
+                      :id="`saved-${m.id}`"
+                      :key="m.id"
+                      type="button"
+                      @click="applySavedMethod(m)"
+                      :class="['inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition',
+                        selectedWallet === m.provider ? 'border-teal bg-teal-50 text-teal-700' : 'border-gray-200 text-gray-600 hover:border-teal']"
+                    >
+                      {{ m.account_name }} • {{ m.masked_number }}
+                      <Star v-if="m.is_default" class="w-3 h-3 text-teal-500" />
+                    </button>
+                  </div>
+                </div>
                 <p class="text-sm text-gray-500 mb-4">Pilih e-wallet kamu:</p>
                 <div class="grid grid-cols-2 gap-3">
                   <label v-for="wallet in ewalletOptions" :key="wallet.id" :class="['flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all', selectedWallet === wallet.id ? 'border-teal bg-teal-50' : 'border-gray-200 hover:border-gray-300']">
@@ -254,7 +305,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { router } from '@inertiajs/vue3'
+import { router, usePage } from '@inertiajs/vue3'
 import Navbar from '@/Components/Landing/Navbar.vue'
 import { httpClient } from '@/utils/http'
 import {
@@ -268,7 +319,19 @@ import {
   TriangleAlert,
   ShieldCheck,
   Copy,
+  Star,
 } from 'lucide-vue-next'
+
+interface SavedMethod {
+  id: string
+  type: 'bank_account' | 'e_wallet' | 'card'
+  provider: string
+  label: string | null
+  account_name: string
+  masked_number: string
+  expiry: string | null
+  is_default: boolean
+}
 
 const props = defineProps<{
   bookingId?: string
@@ -312,6 +375,46 @@ const vaCopied = ref(false)
 const selectedWallet = ref('')
 const walletPhone = ref('')
 const processingIndex = ref(0)
+
+// ─── Metode tersimpan (prefill dari dashboard) ──────────────────────────────
+const savedMethods = ref<SavedMethod[]>([])
+const savedBanks = computed(() => savedMethods.value.filter(m => m.type === 'bank_account'))
+const savedWallets = computed(() => savedMethods.value.filter(m => m.type === 'e_wallet'))
+const savedCards = computed(() => savedMethods.value.filter(m => m.type === 'card'))
+
+const loadSavedMethods = async () => {
+  try {
+    const authUser = (usePage().props as any)?.auth?.user
+    if (!authUser) return
+    const res = await httpClient.get('/payment-methods')
+    savedMethods.value = res.data?.data ?? []
+    // Prefill otomatis HANYA bila metode utama cocok dengan tab aktif awal,
+    // agar tidak memindahkan tab secara mengejutkan.
+    const primary = savedMethods.value.find(m => m.is_default)
+    const primaryTab = primary?.type === 'bank_account' ? 'bank' : primary?.type === 'e_wallet' ? 'ewallet' : primary ? 'card' : ''
+    if (primary && primaryTab === activeTab.value) applySavedMethod(primary, true)
+  } catch { /* abaikan — checkout tetap jalan manual */ }
+}
+
+const applySavedMethod = (m: SavedMethod, silent = false) => {
+  if (m.type === 'bank_account') {
+    activeTab.value = 'bank'
+    selectedBank.value = m.provider
+  } else if (m.type === 'e_wallet') {
+    // Provider terpilih otomatis; nomor HP tetap diisi manual
+    // karena server hanya mengirim versi masking demi keamanan.
+    activeTab.value = 'ewallet'
+    selectedWallet.value = m.provider
+  } else {
+    activeTab.value = 'card'
+    cardForm.value.name = m.account_name
+    if (m.expiry) cardForm.value.expiry = m.expiry
+  }
+  if (!silent) {
+    const el = document.getElementById(`saved-${m.id}`)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }
+}
 const processingSteps = [
   'Memverifikasi data pembayaran',
   'Menghubungi payment gateway',
@@ -462,5 +565,6 @@ onMounted(() => {
   if (props.paymentMethod === 'bank_transfer') activeTab.value = 'bank'
   else if (props.paymentMethod === 'ewallet') activeTab.value = 'ewallet'
   else activeTab.value = 'card'
+  loadSavedMethods()
 })
 </script>

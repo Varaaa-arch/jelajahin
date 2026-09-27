@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -48,7 +50,34 @@ class DashboardController extends Controller
             'summary' => $summary,
             'upcoming' => $upcoming,
             'history' => $history,
+            'paymentMethods' => $this->paymentMethods($request),
         ]);
+    }
+
+    /**
+     * Daftar metode pembayaran tersimpan (masking, tanpa nomor mentah).
+     *
+     * Guard hasTable: kalau migrasi belum jalan (mis. environment baru),
+     * dashboard tetap kebuka dengan list kosong + log warning,
+     * alih-alih 500 Undefined table.
+     */
+    private function paymentMethods(Request $request): array
+    {
+        if (! Schema::hasTable('user_payment_methods')) {
+            Log::warning('Dashboard: tabel user_payment_methods belum ada (migrasi pending?), kirim list kosong.');
+            return [];
+        }
+
+        return $request->user()->paymentMethods()->get()->map(fn ($m) => [
+            'id' => $m->id,
+            'type' => $m->type,
+            'provider' => $m->provider,
+            'label' => $m->label,
+            'account_name' => $m->account_name,
+            'masked_number' => $m->maskedNumber(),
+            'expiry' => $m->expiry,
+            'is_default' => (bool) $m->is_default,
+        ])->values()->toArray();
     }
 
     private function serialize(Booking $booking): array

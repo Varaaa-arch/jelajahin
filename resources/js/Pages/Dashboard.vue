@@ -1,8 +1,23 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Download, Receipt, Ticket, Search, X } from 'lucide-vue-next';
+import { httpClient } from '@/utils/http';
+import {
+    Download,
+    Receipt,
+    Ticket,
+    Search,
+    X,
+    Plus,
+    Pencil,
+    Trash2,
+    CreditCard,
+    Wallet,
+    Landmark,
+    Star,
+    Link2,
+} from 'lucide-vue-next';
 
 interface BookingFragment {
     id: string;
@@ -31,6 +46,17 @@ interface BookingFragment {
     passengers: string[];
 }
 
+interface SavedPaymentMethod {
+    id: string;
+    type: 'bank_account' | 'e_wallet' | 'card';
+    provider: string;
+    label: string | null;
+    account_name: string;
+    masked_number: string;
+    expiry: string | null;
+    is_default: boolean;
+}
+
 interface Props {
     summary: {
         total_bookings: number;
@@ -41,6 +67,7 @@ interface Props {
     };
     upcoming: BookingFragment[];
     history: BookingFragment[];
+    paymentMethods: SavedPaymentMethod[];
 }
 
 const props = defineProps<Props>();
@@ -151,6 +178,185 @@ const filteredHistory = computed(() => {
 const clearHistoryFilter = (): void => {
     historyQuery.value = '';
     historyStatus.value = 'all';
+};
+
+// ─── Metode Pembayaran Tersimpan ─────────────────────────────────────────────
+type MethodType = 'card' | 'bank_account' | 'e_wallet';
+
+const BANK_META: Record<string, { code: string; name: string; color: string }> = {
+    bca: { code: 'BCA', name: 'Bank Central Asia', color: 'bg-blue-500' },
+    bni: { code: 'BNI', name: 'Bank Negara Indonesia', color: 'bg-orange-500' },
+    bri: { code: 'BRI', name: 'Bank Rakyat Indonesia', color: 'bg-blue-700' },
+    mandiri: { code: 'MDR', name: 'Bank Mandiri', color: 'bg-yellow-500' },
+};
+
+const WALLET_META: Record<string, { initials: string; name: string; color: string }> = {
+    gopay: { initials: 'GP', name: 'GoPay', color: 'bg-emerald-500' },
+    ovo: { initials: 'OV', name: 'OVO', color: 'bg-purple-500' },
+    dana: { initials: 'DA', name: 'DANA', color: 'bg-sky-500' },
+    shopeepay: { initials: 'SP', name: 'ShopeePay', color: 'bg-orange-500' },
+};
+
+const CARD_META: Record<string, { code: string; name: string }> = {
+    visa: { code: 'VISA', name: 'Visa' },
+    mastercard: { code: 'MC', name: 'Mastercard' },
+    amex: { code: 'AMEX', name: 'American Express' },
+};
+
+const METHOD_TITLES: Record<MethodType, string> = {
+    card: 'Kartu Tersimpan',
+    e_wallet: 'Dompet Digital (E-Wallet)',
+    bank_account: 'Rekening Bank',
+};
+
+const savedByType = (type: MethodType): SavedPaymentMethod[] =>
+    (props.paymentMethods ?? []).filter((m) => m.type === type);
+
+const providerBadge = (m: SavedPaymentMethod): string => {
+    if (m.type === 'bank_account') return BANK_META[m.provider]?.code ?? m.provider.toUpperCase();
+    if (m.type === 'e_wallet') return WALLET_META[m.provider]?.initials ?? m.provider.slice(0, 2).toUpperCase();
+    return CARD_META[m.provider]?.code ?? m.provider.toUpperCase();
+};
+
+const providerBadgeColor = (m: SavedPaymentMethod): string => {
+    if (m.type === 'bank_account') return BANK_META[m.provider]?.color ?? 'bg-gray-500';
+    if (m.type === 'e_wallet') return WALLET_META[m.provider]?.color ?? 'bg-gray-500';
+    return 'bg-white text-teal-700 border border-teal-200';
+};
+
+const providerName = (m: SavedPaymentMethod): string => {
+    if (m.type === 'bank_account') return BANK_META[m.provider]?.name ?? m.provider;
+    if (m.type === 'e_wallet') return WALLET_META[m.provider]?.name ?? m.provider;
+    return CARD_META[m.provider]?.name ?? m.provider;
+};
+
+// Modal tambah / ubah
+const showMethodModal = ref(false);
+const modalType = ref<MethodType>('card');
+const editingId = ref<string | null>(null);
+const methodForm = ref({
+    provider: '',
+    label: '',
+    account_name: '',
+    account_number: '',
+    expiry: '',
+    is_default: false,
+});
+const modalError = ref('');
+const modalSaving = ref(false);
+
+const modalTitle = computed(() =>
+    editingId.value ? `Ubah ${METHOD_TITLES[modalType.value]}` : `Tambah ${METHOD_TITLES[modalType.value]}`
+);
+
+const modalProviders = computed(() => {
+    if (modalType.value === 'bank_account') return Object.entries(BANK_META).map(([v, m]) => ({ value: v, label: `${m.code} — ${m.name}` }));
+    if (modalType.value === 'e_wallet') return Object.entries(WALLET_META).map(([v, m]) => ({ value: v, label: m.name }));
+    return Object.entries(CARD_META).map(([v, m]) => ({ value: v, label: m.name }));
+});
+
+const openAddModal = (type: MethodType): void => {
+    modalType.value = type;
+    editingId.value = null;
+    methodForm.value = {
+        provider: type === 'bank_account' ? 'bca' : type === 'e_wallet' ? 'gopay' : 'visa',
+        label: '',
+        account_name: '',
+        account_number: '',
+        expiry: '',
+        is_default: (props.paymentMethods ?? []).length === 0,
+    };
+    modalError.value = '';
+    showMethodModal.value = true;
+};
+
+const openEditModal = (m: SavedPaymentMethod): void => {
+    modalType.value = m.type;
+    editingId.value = m.id;
+    methodForm.value = {
+        provider: m.provider,
+        label: m.label ?? '',
+        account_name: m.account_name,
+        account_number: '',
+        expiry: m.expiry ?? '',
+        is_default: m.is_default,
+    };
+    modalError.value = '';
+    showMethodModal.value = true;
+};
+
+const closeMethodModal = (): void => {
+    showMethodModal.value = false;
+    editingId.value = null;
+    modalError.value = '';
+};
+
+const saveMethodModal = async (): Promise<void> => {
+    modalError.value = '';
+    if (!methodForm.value.account_name.trim()) {
+        modalError.value = modalType.value === 'card' ? 'Nama pemegang kartu wajib diisi.' : 'Nama pemilik wajib diisi.';
+        return;
+    }
+    if (!editingId.value && !methodForm.value.account_number.trim()) {
+        modalError.value = 'Nomor wajib diisi.';
+        return;
+    }
+    if (modalType.value === 'card' && !editingId.value && methodForm.value.account_number.replace(/\D/g, '').length < 12) {
+        modalError.value = 'Nomor kartu minimal 12 digit.';
+        return;
+    }
+
+    modalSaving.value = true;
+    try {
+        const payload: Record<string, unknown> = {
+            type: modalType.value,
+            provider: methodForm.value.provider,
+            label: methodForm.value.label.trim() || null,
+            account_name: methodForm.value.account_name.trim(),
+            is_default: methodForm.value.is_default,
+        };
+        if (!editingId.value || methodForm.value.account_number.trim()) {
+            payload.account_number = methodForm.value.account_number.trim();
+        }
+        if (modalType.value === 'card') {
+            payload.expiry = methodForm.value.expiry.trim() || null;
+        }
+
+        if (editingId.value) {
+            await httpClient.patch(`/payment-methods/${editingId.value}`, payload, { withXSRFToken: true });
+        } else {
+            await httpClient.post('/payment-methods', payload, { withXSRFToken: true });
+        }
+        closeMethodModal();
+        router.reload({ only: ['paymentMethods'] });
+    } catch (e: unknown) {
+        const err = e as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
+        const errors = err.response?.data?.errors;
+        modalError.value = errors
+            ? Object.values(errors).flat().join(' ')
+            : err.response?.data?.message || 'Gagal menyimpan. Coba lagi.';
+    } finally {
+        modalSaving.value = false;
+    }
+};
+
+const removeMethod = async (m: SavedPaymentMethod): Promise<void> => {
+    if (!window.confirm(`Hapus ${providerName(m)} ${m.masked_number}?`)) return;
+    try {
+        await httpClient.delete(`/payment-methods/${m.id}`, { withXSRFToken: true });
+        router.reload({ only: ['paymentMethods'] });
+    } catch {
+        window.alert('Gagal menghapus. Coba lagi.');
+    }
+};
+
+const setPrimaryMethod = async (m: SavedPaymentMethod): Promise<void> => {
+    try {
+        await httpClient.post(`/payment-methods/${m.id}/default`, {}, { withXSRFToken: true });
+        router.reload({ only: ['paymentMethods'] });
+    } catch {
+        window.alert('Gagal mengubah metode utama. Coba lagi.');
+    }
 };
 
 const statsCards = computed(() => [
@@ -575,6 +781,238 @@ const statsCards = computed(() => [
                 </div>
             </div>
         </section>
+
+        <!-- Metode Pembayaran -->
+        <section id="payment-methods" class="mt-10 scroll-mt-24">
+            <div class="flex flex-wrap items-end justify-between gap-2">
+                <div>
+                    <h2 class="text-xl font-black tracking-tight text-gray-900">
+                        Metode Pembayaran
+                    </h2>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Simpan rekening, e-wallet, dan kartu agar checkout lebih cepat.
+                    </p>
+                </div>
+                <span class="rounded-full bg-teal-50 px-3 py-1 text-xs font-bold text-teal-700">
+                    {{ (paymentMethods ?? []).length }} tersimpan
+                </span>
+            </div>
+
+            <div class="mt-5 grid gap-4 lg:grid-cols-3">
+                <div
+                    v-for="section in (['card', 'e_wallet', 'bank_account'] as const)"
+                    :key="section"
+                    class="flex flex-col rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
+                >
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-black text-gray-900">{{ METHOD_TITLES[section] }}</h3>
+                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-50 text-gray-400">
+                            <CreditCard v-if="section === 'card'" class="h-5 w-5" />
+                            <Wallet v-else-if="section === 'e_wallet'" class="h-5 w-5" />
+                            <Landmark v-else class="h-5 w-5" />
+                        </span>
+                    </div>
+
+                    <div class="mt-4 flex-1 space-y-3">
+                        <p v-if="savedByType(section).length === 0" class="text-sm text-gray-400">
+                            Belum ada {{ METHOD_TITLES[section].toLowerCase() }} tersimpan.
+                        </p>
+                        <div
+                            v-for="m in savedByType(section)"
+                            :key="m.id"
+                            class="rounded-2xl border border-gray-200 p-4"
+                        >
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-black text-white"
+                                    :class="providerBadgeColor(m)"
+                                >
+                                    {{ providerBadge(m) }}
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate font-mono text-sm font-bold text-gray-900">
+                                        {{ m.masked_number }}
+                                        <span
+                                            v-if="m.is_default"
+                                            class="ml-1.5 inline-flex items-center gap-1 rounded-full bg-teal px-2 py-0.5 font-sans text-[10px] font-bold text-white"
+                                        >
+                                            <Star class="h-3 w-3" /> Utama
+                                        </span>
+                                    </p>
+                                    <p class="truncate text-xs text-gray-500">
+                                        {{ m.expiry ? `Exp ${m.expiry} • ` : '' }}{{ m.account_name }}{{ m.label ? ` • ${m.label}` : '' }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex items-center gap-4 border-t border-gray-100 pt-2.5 text-xs font-bold">
+                                <button
+                                    v-if="!m.is_default"
+                                    type="button"
+                                    @click="setPrimaryMethod(m)"
+                                    class="text-teal-700 hover:text-teal-600"
+                                >
+                                    Jadikan Utama
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="openEditModal(m)"
+                                    class="inline-flex items-center gap-1 text-gray-600 hover:text-gray-900"
+                                >
+                                    <Pencil class="h-3.5 w-3.5" /> Ubah
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="removeMethod(m)"
+                                    class="ml-auto inline-flex items-center gap-1 text-red-500 hover:text-red-600"
+                                >
+                                    <Trash2 class="h-3.5 w-3.5" />
+                                    {{ section === 'e_wallet' ? 'Putuskan' : 'Hapus' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        @click="openAddModal(section)"
+                        class="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-200 py-3 text-sm font-bold text-gray-600 transition hover:border-teal hover:text-teal"
+                    >
+                        <Plus class="h-4 w-4" />
+                        {{ section === 'card' ? 'Tambah Kartu Baru' : section === 'e_wallet' ? 'Hubungkan E-Wallet Baru' : 'Tambah Rekening Baru' }}
+                    </button>
+                </div>
+            </div>
+            <p class="mt-3 flex items-start gap-1.5 text-xs text-gray-400">
+                <Link2 class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                Nomor tersimpan terenkripsi. Kartu hanya menyimpan 4 digit terakhir — nomor penuh dan CVV tidak pernah disimpan.
+            </p>
+        </section>
+
+        <!-- Modal tambah/ubah metode -->
+        <div
+            v-if="showMethodModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm"
+            @click.self="closeMethodModal"
+        >
+            <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-black text-gray-900">{{ modalTitle }}</h3>
+                    <button
+                        type="button"
+                        @click="closeMethodModal"
+                        aria-label="Tutup"
+                        class="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                    >
+                        <X class="h-4 w-4" />
+                    </button>
+                </div>
+
+                <div v-if="modalError" class="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {{ modalError }}
+                </div>
+
+                <div class="mt-4 space-y-4">
+                    <div>
+                        <label class="mb-1.5 block text-sm font-semibold text-gray-700">
+                            {{ modalType === 'card' ? 'Jenis Kartu' : modalType === 'e_wallet' ? 'Provider' : 'Bank' }}
+                        </label>
+                        <select
+                            v-model="methodForm.provider"
+                            :disabled="!!editingId"
+                            class="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-800 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20 disabled:bg-gray-50"
+                        >
+                            <option v-for="p in modalProviders" :key="p.value" :value="p.value">{{ p.label }}</option>
+                        </select>
+                    </div>
+
+                    <div v-if="!editingId || modalType !== 'card'">
+                        <label class="mb-1.5 block text-sm font-semibold text-gray-700">
+                            {{ modalType === 'card' ? 'Nomor Kartu' : modalType === 'e_wallet' ? 'Nomor HP / Akun' : 'Nomor Rekening' }}
+                        </label>
+                        <input
+                            v-model="methodForm.account_number"
+                            type="text"
+                            inputmode="numeric"
+                            :placeholder="modalType === 'card' ? '0000 0000 0000 0000' : modalType === 'e_wallet' ? '0812xxxxxxx' : '0102030405'"
+                            class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 font-mono text-sm tracking-wider focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
+                        />
+                        <p v-if="modalType === 'card'" class="mt-1 text-xs text-gray-400">
+                            Hanya 4 digit terakhir yang disimpan.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="mb-1.5 block text-sm font-semibold text-gray-700">
+                            {{ modalType === 'card' ? 'Nama Pemegang Kartu' : 'Nama Pemilik' }}
+                        </label>
+                        <input
+                            v-model="methodForm.account_name"
+                            type="text"
+                            placeholder="Nama sesuai rekening / akun"
+                            class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
+                        />
+                    </div>
+
+                    <div v-if="modalType === 'card'" class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="mb-1.5 block text-sm font-semibold text-gray-700">Masa Berlaku</label>
+                            <input
+                                v-model="methodForm.expiry"
+                                type="text"
+                                maxlength="5"
+                                placeholder="MM/YY"
+                                class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 font-mono text-sm focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
+                            />
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-semibold text-gray-700">Label (opsional)</label>
+                            <input
+                                v-model="methodForm.label"
+                                type="text"
+                                placeholder="Mis. Kartu Gaji"
+                                class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
+                            />
+                        </div>
+                    </div>
+                    <div v-else>
+                        <label class="mb-1.5 block text-sm font-semibold text-gray-700">Label (opsional)</label>
+                        <input
+                            v-model="methodForm.label"
+                            type="text"
+                            placeholder="Mis. BCA Gaji"
+                            class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
+                        />
+                    </div>
+
+                    <label class="flex cursor-pointer items-center gap-2.5 text-sm text-gray-700">
+                        <input
+                            v-model="methodForm.is_default"
+                            type="checkbox"
+                            class="h-4 w-4 rounded border-gray-300 text-teal focus:ring-teal/30"
+                        />
+                        Jadikan metode utama
+                    </label>
+                </div>
+
+                <div class="mt-6 flex gap-3">
+                    <button
+                        type="button"
+                        @click="closeMethodModal"
+                        class="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-bold text-gray-600 transition hover:bg-gray-50"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        type="button"
+                        @click="saveMethodModal"
+                        :disabled="modalSaving"
+                        class="flex-1 rounded-xl bg-teal py-3 text-sm font-bold text-white shadow-lg shadow-teal/25 transition hover:bg-teal-600 disabled:opacity-60"
+                    >
+                        {{ modalSaving ? 'Menyimpan...' : editingId ? 'Simpan Perubahan' : 'Simpan' }}
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- History -->
         <section v-if="history.length > 0" class="mt-10">

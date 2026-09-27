@@ -37,6 +37,13 @@ const navLinks: LinkItem[] = [
         icon: 'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a1 1 0 110 2v3a2 2 0 002 2h14a2 2 0 002-2v-3a1 1 0 110-2V7a2 2 0 00-2-2H5zM8.5 12h.01M12 12h.01M15.5 12h.01',
     },
     {
+        key: 'payment-methods',
+        label: 'Metode Pembayaran',
+        href: '/dashboard',
+        hash: '#payment-methods',
+        icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
+    },
+    {
         key: 'profil',
         label: 'Profil',
         href: '/profile',
@@ -52,6 +59,8 @@ function syncActiveLink(): void {
         activeLink.value = 'pemesanan';
     } else if (hash === '#eticket') {
         activeLink.value = 'eticket';
+    } else if (hash === '#payment-methods') {
+        activeLink.value = 'payment-methods';
     } else if (path === '/dashboard') {
         activeLink.value = 'dashboard';
     } else if (path.startsWith('/profile')) {
@@ -76,7 +85,9 @@ onUnmounted(() => {
             class="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-navy lg:flex"
         >
             <div class="flex h-16 items-center border-b border-white/10 px-5">
-                <img src="/images/logo.png" alt="Jelajahin" class="h-28 w-auto brightness-0 invert" />
+                <Link href="/" class="hover:opacity-90 transition-opacity" aria-label="Ke beranda">
+                    <img src="/images/logo.png" alt="Jelajahin" class="h-28 w-auto brightness-0 invert" />
+                </Link>
             </div>
 
             <nav class="flex flex-col flex-1 overflow-y-auto px-3 py-4 gap-0.5">
@@ -148,7 +159,9 @@ onUnmounted(() => {
             <div class="absolute inset-y-0 left-0 flex w-72 flex-col bg-navy shadow-2xl">
                 <div class="flex h-16 items-center justify-between border-b border-white/10 px-5">
                     <div class="flex items-center">
-                        <img src="/images/logo.png" alt="Jelajahin" class="h-28 w-auto brightness-0 invert" />
+                        <Link href="/" class="hover:opacity-90 transition-opacity" aria-label="Ke beranda" @click="showingSidebar = false">
+                            <img src="/images/logo.png" alt="Jelajahin" class="h-28 w-auto brightness-0 invert" />
+                        </Link>
                     </div>
                     <button
                         type="button"
