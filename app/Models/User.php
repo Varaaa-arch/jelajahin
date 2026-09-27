@@ -28,6 +28,11 @@ class User extends Authenticatable
         return $this->hasMany(Booking::class);
     }
 
+    public function paymentMethods(): HasMany
+    {
+        return $this->hasMany(UserPaymentMethod::class)->orderByDesc('is_default')->orderBy('created_at');
+    }
+
     /**
      * Get the attributes that should be cast.
      *

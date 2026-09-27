@@ -3,6 +3,7 @@
 use App\Http\Controllers\BookingDocumentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserPaymentMethodController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -114,6 +115,15 @@ Route::get('/booking/success', function () {
 Route::get('/booking/documents/{pnr}', [BookingDocumentController::class, 'download'])
     ->middleware('auth')
     ->name('booking.documents');
+
+// Metode pembayaran tersimpan (JSON untuk dashboard, auth session + owner check)
+Route::middleware('auth')->prefix('payment-methods')->name('payment-methods.')->group(function () {
+    Route::get('/', [UserPaymentMethodController::class, 'index'])->name('index');
+    Route::post('/', [UserPaymentMethodController::class, 'store'])->name('store');
+    Route::patch('/{id}', [UserPaymentMethodController::class, 'update'])->name('update');
+    Route::delete('/{id}', [UserPaymentMethodController::class, 'destroy'])->name('destroy');
+    Route::post('/{id}/default', [UserPaymentMethodController::class, 'setDefault'])->name('default');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
