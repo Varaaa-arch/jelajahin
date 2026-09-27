@@ -20,6 +20,7 @@ const page = usePage()
 const authUser = computed(() => (page.props.auth as { user?: { name: string; email: string } | null } | undefined)?.user ?? null)
 
 const showOtp = ref(false)
+const showVerifiedBanner = ref(false)
 
 watch(() => props.verifyOtp, (v) => {
   if (v) showOtp.value = true
@@ -28,6 +29,14 @@ watch(() => props.verifyOtp, (v) => {
 function handleOtpVerified() {
   showOtp.value = false
   router.visit(route('dashboard'), { preserveState: false })
+}
+
+function dismissVerifiedBanner() {
+  showVerifiedBanner.value = false
+  // Bersihkan query ?verified=1 dari URL tanpa reload
+  const url = new URL(window.location.href)
+  url.searchParams.delete('verified')
+  window.history.replaceState({}, '', url.toString())
 }
 
 // Scroll-to-top
@@ -43,6 +52,9 @@ function scrollToTop() {
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
+  if (new URLSearchParams(window.location.search).get('verified') === '1') {
+    showVerifiedBanner.value = true
+  }
 })
 
 onUnmounted(() => {
@@ -57,6 +69,26 @@ onUnmounted(() => {
 
     <!-- Navbar (fixed, z-50) -->
     <Navbar />
+
+    <!-- Banner sukses verifikasi email (?verified=1) -->
+    <Transition name="fade-up">
+      <div
+        v-if="showVerifiedBanner"
+        class="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-emerald-600 text-white text-sm font-medium pl-4 pr-3 py-3 rounded-xl shadow-lg shadow-emerald-600/30 max-w-[calc(100%-2rem)]"
+        role="status"
+      >
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        <span>Email berhasil diverifikasi. Selamat datang!</span>
+        <button
+          type="button"
+          class="ml-1 font-bold leading-none hover:text-emerald-100 px-1"
+          aria-label="Tutup notifikasi"
+          @click="dismissVerifiedBanner"
+        >×</button>
+      </div>
+    </Transition>
 
     <!-- Hero + Search overlay -->
     <div class="relative">
