@@ -26,7 +26,7 @@ interface NavItem {
 const navItems: NavItem[] = [
     { key: 'dashboard', label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { key: 'flights', label: 'Manage Flights', href: '/admin/flights', icon: Plane },
-    { key: 'passengers', label: 'Manage Passengers', href: '/admin/dashboard', icon: Users },
+    { key: 'passengers', label: 'Manage Passengers', href: '/admin/passengers', icon: Users },
     { key: 'orders', label: 'Manage Orders', href: '/admin/dashboard', icon: ShoppingCart },
     { key: 'payments', label: 'Manage Payments', href: '/admin/dashboard', icon: Wallet },
     { key: 'users', label: 'Manage Users', href: '/admin/dashboard', icon: User },
@@ -43,7 +43,11 @@ function syncActive(): void {
         activeKey.value = 'flights';
         return;
     }
-    const found = navItems.find((i) => i.key !== 'dashboard' && i.key !== 'flights' && path.includes(i.key));
+    if (path.startsWith('/admin/passengers')) {
+        activeKey.value = 'passengers';
+        return;
+    }
+    const found = navItems.find((i) => i.key !== 'dashboard' && i.key !== 'flights' && i.key !== 'passengers' && path.includes(i.key));
     activeKey.value = found ? found.key : 'dashboard';
 }
 

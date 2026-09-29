@@ -138,6 +138,8 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::post('/flights', [\App\Http\Controllers\Admin\AdminFlightController::class, 'store'])->name('flights.store');
     Route::put('/flights/{flight}', [\App\Http\Controllers\Admin\AdminFlightController::class, 'update'])->name('flights.update');
     Route::delete('/flights/{flight}', [\App\Http\Controllers\Admin\AdminFlightController::class, 'destroy'])->name('flights.destroy');
+    Route::get('/passengers', [\App\Http\Controllers\Admin\AdminPassengerController::class, 'index'])->name('passengers.index');
+    Route::put('/passengers/{passenger}', [\App\Http\Controllers\Admin\AdminPassengerController::class, 'update'])->name('passengers.update');
 });
 
 require __DIR__.'/auth.php';

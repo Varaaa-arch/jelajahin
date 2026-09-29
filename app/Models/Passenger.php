@@ -33,4 +33,9 @@ class Passenger extends Model
     {
         return $this->belongsTo(Booking::class);
     }
+
+    public function flightSeat(): BelongsTo
+    {
+        return $this->belongsTo(FlightSeat::class, 'flight_seat_id');
+    }
 }
