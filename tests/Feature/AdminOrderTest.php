@@ -253,6 +253,24 @@ class AdminOrderTest extends TestCase
         $this->assertNotNull($fresh->passengers()->first()->fresh()->flight_seat_id);
     }
 
+    public function test_admin_reschedule_fails_gracefully_when_seats_insufficient(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create();
+        ['route' => $route] = $this->seedRoute();
+        $oldFlight = $this->makeFlight($route->id, 'GA101', now()->addDays(5)->toDateString());
+        // Flight baru tanpa kursi available sama sekali.
+        $newFlight = $this->makeFlight($route->id, 'GA102', now()->addDays(6)->toDateString());
+        $booking = $this->makeBooking($user, $oldFlight, 'ORDT10', 'confirmed');
+
+        $this->actingAs($admin)
+            ->put("/admin/orders/{$booking->id}/reschedule", ['new_flight_id' => $newFlight->id])
+            ->assertSessionHasErrors('new_flight_id');
+
+        // Pesanan tidak berpindah flight.
+        $this->assertSame($oldFlight->id, $booking->fresh()->flight_id);
+    }
+
     public function test_admin_can_download_receipt_without_ownership(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

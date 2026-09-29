@@ -12,6 +12,7 @@ use App\Models\Route;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -254,6 +255,17 @@ class AdminOrderController extends Controller
 
         $pax = max((int) $order->passenger_count, $order->passengers()->count(), 1);
 
+        // Cek dulu di luar transaksi agar kekurangan kursi kembali sebagai
+        // validation error (terbaca modal Inertia), bukan halaman error 422.
+        $availableCount = FlightSeat::where('flight_id', $newFlight->id)
+            ->where('is_available', true)
+            ->count();
+        if ($availableCount < $pax) {
+            throw ValidationException::withMessages([
+                'new_flight_id' => "Kursi tersedia tidak cukup ({$availableCount}/{$pax}).",
+            ]);
+        }
+
         DB::transaction(function () use ($order, $oldFlight, $newFlight, $pax) {
             $seats = FlightSeat::where('flight_id', $newFlight->id)
                 ->where('is_available', true)
@@ -262,8 +274,11 @@ class AdminOrderController extends Controller
                 ->limit($pax)
                 ->get();
 
+            // Pengaman balapan (race): slot habis di antara cek awal & lock.
             if ($seats->count() < $pax) {
-                abort(422, "Kursi tersedia tidak cukup ({$seats->count()}/{$pax}).");
+                throw ValidationException::withMessages([
+                    'new_flight_id' => "Kursi tersedia tidak cukup ({$seats->count()}/{$pax}).",
+                ]);
             }
 
             $this->releaseSeats($order);
