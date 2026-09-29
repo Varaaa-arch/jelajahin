@@ -50,6 +50,15 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // Akun suspended langsung ditolak saat login (lapis kedua: middleware CheckSuspended).
+        if ((Auth::user()->status ?? 'active') === 'suspended') {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Akun Anda di-suspend. Hubungi admin.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

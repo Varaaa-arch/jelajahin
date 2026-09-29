@@ -148,6 +148,11 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/orders/{order}/receipt', [\App\Http\Controllers\Admin\AdminOrderController::class, 'receipt'])->name('orders.receipt');
     Route::get('/payments', [\App\Http\Controllers\Admin\AdminPaymentController::class, 'index'])->name('payments.index');
     Route::put('/payments/{payment}', [\App\Http\Controllers\Admin\AdminPaymentController::class, 'updateStatus'])->name('payments.status');
+    Route::get('/users', [\App\Http\Controllers\Admin\AdminUserController::class, 'index'])->name('users.index');
+    Route::post('/users', [\App\Http\Controllers\Admin\AdminUserController::class, 'store'])->name('users.store');
+    Route::put('/users/{user}', [\App\Http\Controllers\Admin\AdminUserController::class, 'update'])->name('users.update');
+    Route::put('/users/{user}/password', [\App\Http\Controllers\Admin\AdminUserController::class, 'resetPassword'])->name('users.password');
+    Route::delete('/users/{user}', [\App\Http\Controllers\Admin\AdminUserController::class, 'destroy'])->name('users.destroy');
 });
 
 require __DIR__.'/auth.php';
