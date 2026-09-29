@@ -133,7 +133,7 @@ class BookingService
         }
 
         $basePrice = $flight->base_price * $seatCount;
-        $tax = $basePrice * 0.10;
+        $tax = $basePrice * \App\Models\Setting::taxRate();
         $discount = $promoCode ? $this->applyPromo($promoCode, $basePrice) : 0;
         $addonsTotal = self::getAddonsAmount($addons, $seatCount);
         $total = $basePrice + $tax + $addonsTotal - $discount;
