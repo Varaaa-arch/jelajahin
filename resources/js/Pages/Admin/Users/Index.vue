@@ -225,6 +225,7 @@ const offset = computed(() => (props.users.from ? props.users.from - 1 : 0));
             :open="!!deleteTarget"
             :user="deleteTarget"
             :processing="deleteProcessing"
+            :errors="{ ...formErrors, ...pageErrors }"
             @close="deleteTarget = null"
             @confirm="confirmDelete"
         />

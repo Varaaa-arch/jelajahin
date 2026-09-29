@@ -147,6 +147,7 @@ function submit(): void {
                             <div v-if="showPasswordReset" class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <input v-model="resetForm.password" type="password" placeholder="Password baru (min 8)" minlength="8" class="rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20" />
                                 <input v-model="resetForm.password_confirmation" type="password" placeholder="Konfirmasi" minlength="8" class="rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20" />
+                                <p v-if="errors?.password" class="text-xs text-red-600 sm:col-span-2">{{ errors.password }}</p>
                                 <div class="sm:col-span-2">
                                     <button
                                         type="button"
