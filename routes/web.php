@@ -134,6 +134,10 @@ Route::middleware('auth')->group(function () {
 // Admin area (Inertia, tema navy/teal). Filament dipindah ke /sysadmin.
 Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', \App\Http\Controllers\Admin\AdminDashboardController::class)->name('dashboard');
+    Route::get('/flights', [\App\Http\Controllers\Admin\AdminFlightController::class, 'index'])->name('flights.index');
+    Route::post('/flights', [\App\Http\Controllers\Admin\AdminFlightController::class, 'store'])->name('flights.store');
+    Route::put('/flights/{flight}', [\App\Http\Controllers\Admin\AdminFlightController::class, 'update'])->name('flights.update');
+    Route::delete('/flights/{flight}', [\App\Http\Controllers\Admin\AdminFlightController::class, 'destroy'])->name('flights.destroy');
 });
 
 require __DIR__.'/auth.php';
