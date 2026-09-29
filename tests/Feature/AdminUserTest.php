@@ -10,6 +10,8 @@ use App\Models\Route;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Laravel\Socialite\Contracts\User as SocialiteUser;
+use Laravel\Socialite\Facades\Socialite;
 use Tests\TestCase;
 
 class AdminUserTest extends TestCase
@@ -203,6 +205,26 @@ class AdminUserTest extends TestCase
         $this->actingAs($suspended)
             ->get('/dashboard')
             ->assertRedirect('/login');
+        $this->assertGuest();
+    }
+
+    public function test_suspended_user_is_rejected_on_social_login(): void
+    {
+        $suspended = User::factory()->create(['status' => 'suspended']);
+
+        $socialUser = \Mockery::mock(SocialiteUser::class);
+        $socialUser->shouldReceive('getId')->andReturn('soc-999');
+        $socialUser->shouldReceive('getEmail')->andReturn($suspended->email);
+        $socialUser->shouldReceive('getAvatar')->andReturn(null);
+
+        $driver = \Mockery::mock();
+        $driver->shouldReceive('user')->andReturn($socialUser);
+        Socialite::shouldReceive('driver')->with('google')->andReturn($driver);
+
+        $this->get('/auth/google/callback')
+            ->assertRedirect('/')
+            ->assertSessionHas('error');
+
         $this->assertGuest();
     }
 }

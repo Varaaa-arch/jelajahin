@@ -70,6 +70,11 @@ class SocialAuthController extends Controller
             ]);
         }
 
+        // Akun suspended langsung ditolak (jangan pernah login-kan).
+        if (($user->status ?? 'active') === 'suspended') {
+            return redirect('/')->with('error', 'Akun Anda di-suspend. Hubungi admin.');
+        }
+
         Auth::login($user, remember: true);
 
         return redirect()->intended('/');
