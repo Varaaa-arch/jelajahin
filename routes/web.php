@@ -141,6 +141,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/passengers', [\App\Http\Controllers\Admin\AdminPassengerController::class, 'index'])->name('passengers.index');
     Route::put('/passengers/{passenger}', [\App\Http\Controllers\Admin\AdminPassengerController::class, 'update'])->name('passengers.update');
     Route::get('/orders', [\App\Http\Controllers\Admin\AdminOrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [\App\Http\Controllers\Admin\AdminOrderController::class, 'show'])->name('orders.show');
     Route::put('/orders/{order}', [\App\Http\Controllers\Admin\AdminOrderController::class, 'update'])->name('orders.update');
     Route::put('/orders/{order}/status', [\App\Http\Controllers\Admin\AdminOrderController::class, 'updateStatus'])->name('orders.status');
     Route::put('/orders/{order}/reschedule', [\App\Http\Controllers\Admin\AdminOrderController::class, 'reschedule'])->name('orders.reschedule');

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import { ChevronUp, EllipsisVertical, Plane, ConciergeBell, Users } from 'lucide-vue-next';
 import {
     ORDER_STATUS_META,
@@ -72,14 +73,17 @@ function payMeta(status: string): { label: string; classes: string } {
                                 @click="toggle(o.id)"
                             >
                                 <td class="px-5 py-4 text-gray-700">{{ (offset ?? 0) + idx + 1 }}</td>
-                                <td class="px-5 py-4">
-                                    <span class="inline-flex items-center gap-1 font-bold text-teal-dark">
+                                <td class="px-5 py-4" @click.stop>
+                                    <Link
+                                        :href="`/admin/orders/${o.id}`"
+                                        class="inline-flex items-center gap-1 font-bold text-teal-dark hover:underline"
+                                    >
                                         {{ o.pnr }}
                                         <ChevronUp
                                             class="h-3.5 w-3.5 transition-transform"
                                             :class="expandedId === o.id ? '' : 'rotate-180'"
                                         />
-                                    </span>
+                                    </Link>
                                 </td>
                                 <td class="px-5 py-4">
                                     <p class="font-semibold text-gray-900">{{ o.booker_name }}</p>
@@ -133,6 +137,13 @@ function payMeta(status: string): { label: string; classes: string } {
                                             v-if="menuId === o.id"
                                             class="absolute right-0 z-20 w-44 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 text-left shadow-xl"
                                         >
+                                            <Link
+                                                :href="`/admin/orders/${o.id}`"
+                                                class="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                                @click="menuId = null"
+                                            >
+                                                View Detail
+                                            </Link>
                                             <button
                                                 type="button"
                                                 class="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"

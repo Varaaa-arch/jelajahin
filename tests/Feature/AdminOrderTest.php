@@ -7,6 +7,7 @@ use App\Models\AircraftSeat;
 use App\Models\AircraftType;
 use App\Models\Airport;
 use App\Models\Booking;
+use App\Models\ETicket;
 use App\Models\Flight;
 use App\Models\FlightSeat;
 use App\Models\Passenger;
@@ -304,5 +305,81 @@ class AdminOrderTest extends TestCase
             ->get("/admin/orders/{$booking->id}/receipt?doc=eticket")
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_guest_cannot_view_order_detail(): void
+    {
+        $user = User::factory()->create();
+        ['route' => $route] = $this->seedRoute();
+        $flight = $this->makeFlight($route->id, 'GA101', now()->addDays(5)->toDateString());
+        $booking = $this->makeBooking($user, $flight, 'ORDT12', 'confirmed');
+
+        $this->get("/admin/orders/{$booking->id}")->assertRedirect('/login');
+        $this->actingAs($user)->get("/admin/orders/{$booking->id}")->assertForbidden();
+    }
+
+    public function test_admin_can_view_order_detail_with_breakdown(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create();
+        ['route' => $route] = $this->seedRoute();
+        $flight = $this->makeFlight($route->id, 'GA101', now()->addDays(5)->toDateString());
+        $booking = $this->makeBooking($user, $flight, 'ORDT13', 'confirmed');
+        $booking->update([
+            'base_amount' => 3000000,
+            'tax_amount' => 450000,
+            'addons_amount' => 450000,
+            'total_price' => 3900000,
+            'addons' => ['insurance' => 'premium', 'meals' => ['Standard Meals']],
+        ]);
+
+        ETicket::create([
+            'booking_id' => $booking->id,
+            'eticket_number' => '126-9876543210',
+            'passenger_name' => 'John Doe',
+            'flight_number' => 'GA101',
+            'departure_date' => now()->addDays(5)->toDateString(),
+            'departure_time' => '07:00:00',
+            'seat_number' => '1A',
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/admin/orders/{$booking->id}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Orders/Show')
+                ->where('order.pnr', 'ORDT13')
+                ->where('order.order_status', 'confirmed')
+                ->where('order.price.base', 3000000)
+                ->where('order.price.total', 3900000)
+                ->where('order.passengers.0.type', 'Adult')
+                ->where('order.passengers.0.ticket_number', '126-9876543210')
+                ->has('order.payments', 1)
+                ->where('order.payments.0.status', 'success')
+                ->has('rescheduleFlights'));
+    }
+
+    public function test_admin_order_detail_returns_404_for_unknown_id(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)
+            ->get('/admin/orders/00000000-0000-0000-0000-000000000000')
+            ->assertNotFound();
+    }
+
+    public function test_admin_actions_can_redirect_back_to_detail(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create();
+        ['route' => $route] = $this->seedRoute();
+        $flight = $this->makeFlight($route->id, 'GA101', now()->addDays(5)->toDateString());
+        $booking = $this->makeBooking($user, $flight, 'ORDT14', 'pending');
+
+        $this->actingAs($admin)
+            ->put("/admin/orders/{$booking->id}/status", ['status' => 'confirmed', 'redirect_to' => 'show'])
+            ->assertRedirect(route('admin.orders.show', $booking));
+
+        $this->assertSame('confirmed', $booking->fresh()->status);
     }
 }

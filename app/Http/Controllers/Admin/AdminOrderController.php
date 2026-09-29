@@ -10,6 +10,7 @@ use App\Models\FlightSeat;
 use App\Models\Invoice;
 use App\Models\Route;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -126,23 +127,7 @@ class AdminOrderController extends Controller
             'airline_name' => $r->airline?->name,
         ]);
 
-        $rescheduleFlights = Flight::with(['route.originAirport:id,code', 'route.destinationAirport:id,code', 'route.airline:id,code,name'])
-            ->whereDate('departure_date', '>=', now()->toDateString())
-            ->whereNotIn('status', ['cancelled', 'landed'])
-            ->orderBy('departure_date')->orderBy('departure_time')
-            ->limit(120)
-            ->get()
-            ->map(fn (Flight $f) => [
-                'id' => $f->id,
-                'flight_number' => $f->flight_number,
-                'route_id' => $f->route_id,
-                'origin_code' => $f->route?->originAirport?->code,
-                'destination_code' => $f->route?->destinationAirport?->code,
-                'airline_name' => $f->route?->airline?->name,
-                'departure_date' => $f->departure_date?->format('Y-m-d'),
-                'departure_time' => substr((string) $f->departure_time, 0, 5),
-                'seats_available' => (int) ($f->seats_available ?? 0),
-            ]);
+        $rescheduleFlights = $this->rescheduleFlightOptions();
 
         return Inertia::render('Admin/Orders/Index', [
             'orders' => [
@@ -171,6 +156,27 @@ class AdminOrderController extends Controller
         ]);
     }
 
+    /** Halaman detail satu PNR: breakdown 360°. */
+    public function show(Booking $order): Response
+    {
+        $order->load([
+            'user:id,name,email',
+            'flight.route.airline',
+            'flight.route.originAirport',
+            'flight.route.destinationAirport',
+            'flight.aircraft.aircraftType',
+            'passengers.flightSeat.aircraftSeat.seatClass',
+            'payment' => fn ($p) => $p->orderByDesc('created_at'),
+            'etickets',
+            'invoice',
+        ]);
+
+        return Inertia::render('Admin/Orders/Show', [
+            'order' => $this->toDetailArray($order),
+            'rescheduleFlights' => $this->rescheduleFlightOptions(),
+        ]);
+    }
+
     /** Ubah status pesanan (confirm / complete / cancel / refund flow). */
     public function updateStatus(Request $request, Booking $order)
     {
@@ -182,7 +188,7 @@ class AdminOrderController extends Controller
         $to = $data['status'];
 
         if ($from === $to) {
-            return back()->with('success', "Pesanan {$order->pnr_code} sudah berstatus {$to}.");
+            return $this->redirectAfter($request, $order, "Pesanan {$order->pnr_code} sudah berstatus {$to}.");
         }
 
         $allowed = self::TRANSITIONS[$from] ?? [];
@@ -202,8 +208,7 @@ class AdminOrderController extends Controller
             }
         });
 
-        return redirect()->route('admin.orders.index')
-            ->with('success', "Pesanan {$order->pnr_code} diubah menjadi {$to}.");
+        return $this->redirectAfter($request, $order, "Pesanan {$order->pnr_code} diubah menjadi {$to}.");
     }
 
     /** Modify: add-ons + special requests (tanpa ganti flight / jumlah penumpang). */
@@ -239,8 +244,7 @@ class AdminOrderController extends Controller
             'addons' => $addons,
         ]);
 
-        return redirect()->route('admin.orders.index')
-            ->with('success', "Pesanan {$order->pnr_code} berhasil diperbarui.");
+        return $this->redirectAfter($request, $order, "Pesanan {$order->pnr_code} berhasil diperbarui.");
     }
 
     /** Reschedule: pindah ke flight lain dalam rute yang sama. */
@@ -315,8 +319,7 @@ class AdminOrderController extends Controller
             }
         });
 
-        return redirect()->route('admin.orders.index')
-            ->with('success', "Pesanan {$order->pnr_code} dipindah ke {$newFlight->flight_number}.");
+        return $this->redirectAfter($request, $order, "Pesanan {$order->pnr_code} dipindah ke {$newFlight->flight_number}.");
     }
 
     /** Unduh receipt (e-ticket / invoice) untuk admin — tanpa owner check. */
@@ -384,6 +387,142 @@ class AdminOrderController extends Controller
         $pdf = Pdf::loadView('documents.ticket', $ctx)->setPaper('a4', 'portrait');
 
         return $pdf->download("etiket-{$order->pnr_code}.pdf");
+    }
+
+    /** Opsi flight pengganti untuk modal reschedule. */
+    private function rescheduleFlightOptions(): array
+    {
+        return Flight::with(['route.originAirport:id,code', 'route.destinationAirport:id,code', 'route.airline:id,code,name'])
+            ->whereDate('departure_date', '>=', now()->toDateString())
+            ->whereNotIn('status', ['cancelled', 'landed'])
+            ->orderBy('departure_date')->orderBy('departure_time')
+            ->limit(120)
+            ->get()
+            ->map(fn (Flight $f) => [
+                'id' => $f->id,
+                'flight_number' => $f->flight_number,
+                'route_id' => $f->route_id,
+                'origin_code' => $f->route?->originAirport?->code,
+                'destination_code' => $f->route?->destinationAirport?->code,
+                'airline_name' => $f->route?->airline?->name,
+                'departure_date' => $f->departure_date?->format('Y-m-d'),
+                'departure_time' => substr((string) $f->departure_time, 0, 5),
+                'seats_available' => (int) ($f->seats_available ?? 0),
+            ])
+            ->toArray();
+    }
+
+    /**
+     * Redirect pasca-aksi: kembali ke halaman detail bila diminta
+     * via redirect_to=show (allowlist, tanpa open redirect).
+     */
+    private function redirectAfter(Request $request, Booking $order, string $message)
+    {
+        if ($request->input('redirect_to') === 'show') {
+            return redirect()->route('admin.orders.show', $order)->with('success', $message);
+        }
+
+        return redirect()->route('admin.orders.index')->with('success', $message);
+    }
+
+    /** Bentuk detail 360° satu PNR untuk halaman Show. */
+    private function toDetailArray(Booking $b): array
+    {
+        $base = $this->toArray($b);
+        $flight = $b->flight;
+        $route = $flight?->route;
+        $aircraftType = $flight?->aircraft?->aircraftType;
+
+        $aircraftLabel = trim(($aircraftType?->manufacturer ? $aircraftType->manufacturer.' ' : '').($aircraftType?->model ?? ''));
+        if ($aircraftLabel === '') {
+            $aircraftLabel = $flight?->aircraft?->registration_number ?? '-';
+        }
+
+        $minutes = (int) ($route?->estimated_duration_minutes ?? 0);
+        $durationLabel = $minutes > 0
+            ? (intdiv($minutes, 60) > 0 ? intdiv($minutes, 60).'h ' : '').($minutes % 60).'m'
+            : '-';
+
+        // Nomor tiket dicocokkan by nama (eticket menyimpan "first last" tanpa title).
+        $tickets = [];
+        foreach ($b->etickets ?? [] as $t) {
+            $tickets[mb_strtolower(trim((string) $t->passenger_name))] = $t->eticket_number;
+        }
+
+        $passengers = collect($base['passengers'])->map(function ($p) use ($b, $tickets) {
+            $full = $b->passengers->firstWhere('id', $p['id']);
+            $type = $this->passengerType($full?->date_of_birth);
+            $nameKey = mb_strtolower(trim(($p['first_name'] ?? '').' '.($p['last_name'] ?? '')));
+
+            return array_merge($p, [
+                'type' => $type,
+                'date_of_birth' => $full?->date_of_birth,
+                'ticket_number' => $tickets[$nameKey] ?? null,
+            ]);
+        })->toArray();
+
+        $counts = ['adult' => 0, 'child' => 0, 'infant' => 0];
+        foreach ($passengers as $p) {
+            $k = strtolower($p['type']);
+            if (isset($counts[$k])) {
+                $counts[$k]++;
+            }
+        }
+
+        $payments = ($b->payment ?? collect())->map(fn ($pay) => [
+            'id' => $pay->id,
+            'payment_method' => $pay->payment_method,
+            'amount' => (float) $pay->amount,
+            'status' => $pay->status,
+            'transaction_id' => $pay->transaction_id,
+            'paid_at' => $pay->paid_at?->format('d M Y, H:i'),
+            'expires_at' => $pay->expires_at?->format('d M Y, H:i'),
+            'created_at' => $pay->created_at?->format('d M Y, H:i'),
+        ])->toArray();
+
+        $latestInvoice = $b->invoice?->first();
+
+        return array_merge($base, [
+            'passengers' => $passengers,
+            'type_counts' => $counts,
+            'aircraft_label' => $aircraftLabel,
+            'aircraft_registration' => $flight?->aircraft?->registration_number,
+            'duration_label' => $durationLabel,
+            'origin_city' => $route?->originAirport?->city ?? '',
+            'destination_city' => $route?->destinationAirport?->city ?? '',
+            'placed_at' => $b->created_at?->format('d M Y, H:i'),
+            'price' => [
+                'base' => (float) $b->base_amount,
+                'discount' => (float) $b->discount_amount,
+                'tax' => (float) $b->tax_amount,
+                'addons' => (float) ($b->addons_amount ?? 0),
+                'total' => (float) $b->total_price,
+            ],
+            'payments' => $payments,
+            'invoice_number' => $latestInvoice?->invoice_number,
+        ]);
+    }
+
+    /** Tipe penumpang dari tanggal lahir: Infant <2, Child 2–11, Adult 12+. */
+    private function passengerType(?string $dateOfBirth): string
+    {
+        if (! $dateOfBirth) {
+            return 'Adult';
+        }
+        try {
+            $age = Carbon::parse($dateOfBirth)->diffInYears(now());
+        } catch (\Throwable) {
+            return 'Adult';
+        }
+
+        if ($age < 2) {
+            return 'Infant';
+        }
+        if ($age < 12) {
+            return 'Child';
+        }
+
+        return 'Adult';
     }
 
     private function toArray(Booking $b): array

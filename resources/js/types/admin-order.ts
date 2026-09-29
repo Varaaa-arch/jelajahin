@@ -142,3 +142,41 @@ export function formatOrderDate(iso?: string | null): string {
     if (Number.isNaN(d.getTime())) return iso;
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
+
+export interface AdminOrderPayment {
+    id: string;
+    payment_method?: string | null;
+    amount: number;
+    status: string;
+    transaction_id: string;
+    paid_at?: string | null;
+    expires_at?: string | null;
+    created_at?: string | null;
+}
+
+export interface AdminOrderDetailPassenger extends AdminOrderPassenger {
+    type: string;
+    ticket_number?: string | null;
+}
+
+export interface AdminOrderPrice {
+    base: number;
+    discount: number;
+    tax: number;
+    addons: number;
+    total: number;
+}
+
+export interface AdminOrderDetail extends AdminOrder {
+    passengers: AdminOrderDetailPassenger[];
+    type_counts: { adult: number; child: number; infant: number };
+    aircraft_label: string;
+    aircraft_registration?: string | null;
+    duration_label: string;
+    origin_city: string;
+    destination_city: string;
+    placed_at?: string | null;
+    price: AdminOrderPrice;
+    payments: AdminOrderPayment[];
+    invoice_number?: string | null;
+}

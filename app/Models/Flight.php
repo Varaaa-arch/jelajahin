@@ -37,6 +37,11 @@ class Flight extends Model
         return $this->belongsTo(\App\Models\Route::class);
     }
 
+    public function aircraft()
+    {
+        return $this->belongsTo(\App\Models\Aircraft::class);
+    }
+
     public function flightSeats()
     {
         return $this->hasMany(\App\Models\FlightSeat::class);
