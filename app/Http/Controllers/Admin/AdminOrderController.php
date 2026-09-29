@@ -218,9 +218,21 @@ class AdminOrderController extends Controller
             'addons.meals.*' => 'string|max:50',
         ]);
 
-        $addons = $order->addons ?? [];
+        // Tulis per-key agar nilai kosong (null / '' / []) benar-benar
+        // menghapus add-on, bukan malah mempertahankan nilai lama.
+        $addons = is_array($order->addons) ? $order->addons : [];
         if (array_key_exists('addons', $data) && is_array($data['addons'])) {
-            $addons = array_merge(is_array($addons) ? $addons : [], array_filter($data['addons'], fn ($v) => $v !== null));
+            foreach (['baggage', 'insurance', 'meals'] as $key) {
+                if (! array_key_exists($key, $data['addons'])) {
+                    continue;
+                }
+                $value = $data['addons'][$key];
+                if ($value === null || $value === '' || $value === []) {
+                    unset($addons[$key]);
+                } else {
+                    $addons[$key] = $value;
+                }
+            }
         }
 
         $order->update([

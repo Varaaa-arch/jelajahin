@@ -271,6 +271,27 @@ class AdminOrderTest extends TestCase
         $this->assertSame($oldFlight->id, $booking->fresh()->flight_id);
     }
 
+    public function test_admin_can_clear_addons_via_modify(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create();
+        ['route' => $route] = $this->seedRoute();
+        $flight = $this->makeFlight($route->id, 'GA101', now()->addDays(5)->toDateString());
+        $booking = $this->makeBooking($user, $flight, 'ORDT11', 'confirmed');
+        $booking->update(['addons' => ['baggage' => '20kg', 'insurance' => 'premium', 'meals' => ['Standard Meals']]]);
+
+        $this->actingAs($admin)
+            ->put("/admin/orders/{$booking->id}", [
+                'addons' => ['baggage' => null, 'insurance' => null, 'meals' => []],
+            ])
+            ->assertRedirect(route('admin.orders.index'));
+
+        $fresh = $booking->fresh();
+        $this->assertArrayNotHasKey('baggage', $fresh->addons ?? []);
+        $this->assertArrayNotHasKey('insurance', $fresh->addons ?? []);
+        $this->assertArrayNotHasKey('meals', $fresh->addons ?? []);
+    }
+
     public function test_admin_can_download_receipt_without_ownership(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
