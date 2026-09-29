@@ -31,7 +31,7 @@ const navItems: NavItem[] = [
     { key: 'payments', label: 'Manage Payments', href: '/admin/payments', icon: Wallet },
     { key: 'users', label: 'Manage Users', href: '/admin/users', icon: User },
     { key: 'reports', label: 'Reports', href: '/admin/reports', icon: BarChart3 },
-    { key: 'settings', label: 'Settings', href: '/admin/dashboard', icon: Settings },
+    { key: 'settings', label: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
 const page = usePage();
@@ -61,6 +61,10 @@ function syncActive(): void {
     }
     if (path.startsWith('/admin/reports')) {
         activeKey.value = 'reports';
+        return;
+    }
+    if (path.startsWith('/admin/settings')) {
+        activeKey.value = 'settings';
         return;
     }
     const found = navItems.find((i) => i.key !== 'dashboard' && i.key !== 'flights' && i.key !== 'passengers' && path.includes(i.key));

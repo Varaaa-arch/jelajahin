@@ -154,6 +154,10 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::put('/users/{user}/password', [\App\Http\Controllers\Admin\AdminUserController::class, 'resetPassword'])->name('users.password');
     Route::delete('/users/{user}', [\App\Http\Controllers\Admin\AdminUserController::class, 'destroy'])->name('users.destroy');
     Route::get('/reports', [\App\Http\Controllers\Admin\AdminReportController::class, 'index'])->name('reports.index');
+    Route::get('/settings', [\App\Http\Controllers\Admin\AdminSettingController::class, 'index'])->name('settings.index');
+    Route::put('/settings', [\App\Http\Controllers\Admin\AdminSettingController::class, 'update'])->name('settings.update');
+    Route::put('/settings/profile', [\App\Http\Controllers\Admin\AdminSettingController::class, 'updateProfile'])->name('settings.profile');
+    Route::put('/settings/password', [\App\Http\Controllers\Admin\AdminSettingController::class, 'updatePassword'])->name('settings.password');
 });
 
 require __DIR__.'/auth.php';
