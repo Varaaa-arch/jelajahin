@@ -146,6 +146,8 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::put('/orders/{order}/status', [\App\Http\Controllers\Admin\AdminOrderController::class, 'updateStatus'])->name('orders.status');
     Route::put('/orders/{order}/reschedule', [\App\Http\Controllers\Admin\AdminOrderController::class, 'reschedule'])->name('orders.reschedule');
     Route::get('/orders/{order}/receipt', [\App\Http\Controllers\Admin\AdminOrderController::class, 'receipt'])->name('orders.receipt');
+    Route::get('/payments', [\App\Http\Controllers\Admin\AdminPaymentController::class, 'index'])->name('payments.index');
+    Route::put('/payments/{payment}', [\App\Http\Controllers\Admin\AdminPaymentController::class, 'updateStatus'])->name('payments.status');
 });
 
 require __DIR__.'/auth.php';

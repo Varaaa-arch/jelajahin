@@ -19,6 +19,8 @@ use Inertia\Response;
 
 class AdminOrderController extends Controller
 {
+    use ReleasesBookingSeats;
+
     public const ORDER_STATUSES = ['pending', 'confirmed', 'completed', 'cancelled', 'refund_requested', 'refunded'];
 
     public const PAYMENT_MAP = [
@@ -573,23 +575,6 @@ class AdminOrderController extends Controller
             'addons_insurance' => $addons['insurance'] ?? null,
             'addons_meals' => $addons['meals'] ?? [],
         ];
-    }
-
-    /** Kembalikan kursi penumpang ke available (dipakai saat cancel/refund/reschedule). */
-    private function releaseSeats(Booking $order): void
-    {
-        $seatIds = $order->passengers()->whereNotNull('flight_seat_id')->pluck('flight_seat_id');
-        if ($seatIds->isNotEmpty()) {
-            FlightSeat::whereIn('id', $seatIds)->update(['is_available' => true, 'booking_id' => null]);
-        }
-        FlightSeat::where('booking_id', $order->id)->update(['is_available' => true, 'booking_id' => null]);
-
-        if ($order->flight_id) {
-            $available = FlightSeat::where('flight_id', $order->flight_id)->where('is_available', true)->count();
-            if ($available > 0 || FlightSeat::where('flight_id', $order->flight_id)->exists()) {
-                Flight::where('id', $order->flight_id)->update(['seats_available' => $available]);
-            }
-        }
     }
 
     private function ensureInvoice(Booking $order): Invoice

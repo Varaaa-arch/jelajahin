@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -26,7 +27,8 @@ return new class extends Migration
      * Sinkron daftar nilai CHECK constraint status.
      * - pgsql: enum() Laravel dibuat sebagai CHECK constraint -> drop & tambah ulang.
      * - mysql: ubah definisi ENUM via MODIFY COLUMN.
-     * - sqlite (dipakai test): enum dipetakan ke varchar tanpa constraint -> lewati.
+     * - sqlite (dipakai test): enum dibuat sebagai varchar + CHECK inline,
+     *     sehingga kolom diubah ke string via doctrine/dbal (rebuild tabel).
      */
     private function sync(array $bookingStatuses, array $paymentStatuses): void
     {
@@ -52,10 +54,15 @@ return new class extends Migration
             return;
         }
 
-        // sqlite & lainnya: tidak ada CHECK constraint yang perlu diubah.
-        if (! Schema::hasColumn('bookings', 'status') || ! Schema::hasColumn('payments', 'status')) {
-            return;
-        }
+        // sqlite (dipakai test): enum dibuat sebagai varchar + CHECK inline.
+        // doctrine/dbal me-rebuild tabel sehingga CHECK lama ikut terbuang;
+        // validasi nilai tetap dijaga di level aplikasi (FormRequest / in:).
+        Schema::table('bookings', function (Blueprint $table) {
+            $table->string('status', 30)->default('pending')->change();
+        });
+        Schema::table('payments', function (Blueprint $table) {
+            $table->string('status', 30)->default('pending')->change();
+        });
     }
 
     private function quoteList(array $values): string
