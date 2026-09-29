@@ -126,6 +126,21 @@ class OtpTest extends TestCase
         $this->assertNotNull($user->fresh()->email_verified_at);
     }
 
+    public function test_verify_promotes_inactive_to_active_but_keeps_suspended(): void
+    {
+        $inactive = User::factory()->create(['email' => 'inactive@example.com', 'email_verified_at' => null, 'status' => 'inactive']);
+        $suspended = User::factory()->create(['email' => 'suspended@example.com', 'email_verified_at' => null, 'status' => 'suspended']);
+
+        foreach (['inactive@example.com' => $inactive, 'suspended@example.com' => $suspended] as $email => $u) {
+            $otp = OtpCode::generateFor($email);
+            $this->postJson('/api/otp/verify', ['email' => $email, 'code' => $otp->code])
+                ->assertOk();
+        }
+
+        $this->assertSame('active', $inactive->fresh()->status);
+        $this->assertSame('suspended', $suspended->fresh()->status);
+    }
+
     public function test_verify_does_not_change_already_verified_email(): void
     {
         $user = User::factory()->create(['email' => 'test@example.com', 'email_verified_at' => now()]);

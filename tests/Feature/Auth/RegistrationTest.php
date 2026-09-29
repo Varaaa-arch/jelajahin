@@ -29,6 +29,7 @@ class RegistrationTest extends TestCase
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('home', absolute: false));
+        $this->assertSame('inactive', User::where('email', 'test@example.com')->firstOrFail()->status);
     }
 
     public function test_new_users_are_prompted_for_otp_on_home(): void

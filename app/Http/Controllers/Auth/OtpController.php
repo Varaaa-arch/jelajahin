@@ -101,6 +101,11 @@ class OtpController extends Controller
             $user->markEmailAsVerified();
         }
 
+        // Akun yang baru verifikasi naik dari inactive -> active (selain suspended).
+        if ($user && ($user->status ?? 'active') === 'inactive') {
+            $user->update(['status' => 'active']);
+        }
+
         return response()->json([
             'message'  => 'Email berhasil diverifikasi!',
             'verified' => true,

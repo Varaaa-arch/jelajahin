@@ -22,6 +22,11 @@ class VerifyEmailController extends Controller
             event(new Verified($request->user()));
         }
 
+        // Akun yang baru verifikasi naik dari inactive -> active (selain suspended).
+        if (($request->user()->status ?? 'active') === 'inactive') {
+            $request->user()->update(['status' => 'active']);
+        }
+
         return redirect()->intended(route('home', absolute: false).'?verified=1');
     }
 }
