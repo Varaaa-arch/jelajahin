@@ -140,6 +140,11 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::delete('/flights/{flight}', [\App\Http\Controllers\Admin\AdminFlightController::class, 'destroy'])->name('flights.destroy');
     Route::get('/passengers', [\App\Http\Controllers\Admin\AdminPassengerController::class, 'index'])->name('passengers.index');
     Route::put('/passengers/{passenger}', [\App\Http\Controllers\Admin\AdminPassengerController::class, 'update'])->name('passengers.update');
+    Route::get('/orders', [\App\Http\Controllers\Admin\AdminOrderController::class, 'index'])->name('orders.index');
+    Route::put('/orders/{order}', [\App\Http\Controllers\Admin\AdminOrderController::class, 'update'])->name('orders.update');
+    Route::put('/orders/{order}/status', [\App\Http\Controllers\Admin\AdminOrderController::class, 'updateStatus'])->name('orders.status');
+    Route::put('/orders/{order}/reschedule', [\App\Http\Controllers\Admin\AdminOrderController::class, 'reschedule'])->name('orders.reschedule');
+    Route::get('/orders/{order}/receipt', [\App\Http\Controllers\Admin\AdminOrderController::class, 'receipt'])->name('orders.receipt');
 });
 
 require __DIR__.'/auth.php';
