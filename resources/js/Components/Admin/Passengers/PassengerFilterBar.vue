@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { ChevronDown, ListFilter, Search } from 'lucide-vue-next';
 import type { AdminPassengerFilters } from '@/types/admin-passenger';
 
@@ -37,14 +37,16 @@ function onSearchInput(): void {
     }, 350);
 }
 
-const hasActiveFilter =
-    !!props.filters.q ||
-    props.filters.status !== 'all' ||
-    props.filters.check_in !== 'all' ||
-    props.filters.nationality !== 'all' ||
-    props.filters.payment !== 'all' ||
-    !!props.filters.date_from ||
-    !!props.filters.date_to;
+const hasActiveFilter = computed(
+    () =>
+        !!props.filters.q ||
+        props.filters.status !== 'all' ||
+        props.filters.check_in !== 'all' ||
+        props.filters.nationality !== 'all' ||
+        props.filters.payment !== 'all' ||
+        !!props.filters.date_from ||
+        !!props.filters.date_to,
+);
 </script>
 
 <template>

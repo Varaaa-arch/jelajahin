@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Calendar, Plane, Search, Tags } from 'lucide-vue-next';
 import type { AdminOrderFilters, AirlineOption, RouteOption } from '@/types/admin-order';
 
@@ -47,14 +47,16 @@ const paymentPills = [
     { key: 'refunded', label: 'Refunded' },
 ] as const;
 
-const hasActiveFilter =
-    !!props.filters.q ||
-    props.filters.order_status !== 'all' ||
-    props.filters.payment_status !== 'all' ||
-    !!props.filters.airline_id ||
-    !!props.filters.route_id ||
-    !!props.filters.date_from ||
-    !!props.filters.date_to;
+const hasActiveFilter = computed(
+    () =>
+        !!props.filters.q ||
+        props.filters.order_status !== 'all' ||
+        props.filters.payment_status !== 'all' ||
+        !!props.filters.airline_id ||
+        !!props.filters.route_id ||
+        !!props.filters.date_from ||
+        !!props.filters.date_to,
+);
 
 function pillClass(active: boolean): string {
     return active
