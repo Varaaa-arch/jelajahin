@@ -19,9 +19,12 @@ const userMenuOpen      = ref(false)
 const page = usePage()
 
 const user = computed(() => {
-  const auth = page.props.auth as { user?: { name: string; email: string; email_verified_at?: string | null } | null } | undefined
+  const auth = page.props.auth as { user?: { name: string; email: string; email_verified_at?: string | null; role?: string | null } | null } | undefined
   return auth?.user ?? null
 })
+
+// Admin diarahkan ke dashboard admin, customer ke dashboard customer.
+const isAdmin = computed(() => user.value?.role === 'admin')
 
 const userInitials = computed(() =>
   user.value
@@ -29,12 +32,16 @@ const userInitials = computed(() =>
     : ''
 )
 
-const profileMenu = [
-  { label: 'Dashboard',          icon: 'layout', href: () => route('dashboard') },
+const profileMenu = computed(() => [
+  {
+    label: isAdmin.value ? 'Dashboard Admin' : 'Dashboard',
+    icon: 'layout',
+    href: () => isAdmin.value ? route('admin.dashboard') : route('dashboard'),
+  },
   { label: 'Pemesanan Saya',     icon: 'plane',  href: () => route('dashboard') + '#pemesanan' },
   { label: 'E-Ticket & Invoice', icon: 'ticket', href: () => route('dashboard') + '#eticket' },
   { label: 'Profil',             icon: 'user',   href: () => route('profile.edit') },
-]
+])
 
 const iconPaths: Record<string, string> = {
   layout: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
