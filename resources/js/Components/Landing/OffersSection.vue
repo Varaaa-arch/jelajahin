@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Star, Zap } from 'lucide-vue-next'
 import OfferCard, { type Offer } from './OfferCard.vue'
 
 const offers: Offer[] = [
@@ -9,7 +10,8 @@ const offers: Offer[] = [
     price: 'Rp 600rb',
     image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&auto=format&fit=crop&q=75',
     imageAlt: 'Pantai Bali dengan pemandangan yang indah',
-    badge: '⚡ Cepat Habis',
+    badge: 'Cepat Habis',
+    badgeIcon: Zap,
     badgeVariant: 'green',
     href: '#',
   },
@@ -20,7 +22,8 @@ const offers: Offer[] = [
     price: 'Rp 1,6jt',
     image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=600&auto=format&fit=crop&q=75',
     imageAlt: 'Konser musik dengan panggung penuh cahaya',
-    badge: '★ Booking Cepat',
+    badge: 'Booking Cepat',
+    badgeIcon: Star,
     badgeVariant: 'blue',
     href: '#',
   },

@@ -137,7 +137,7 @@
 
       <!-- Body -->
       <div class="body">
-        <p class="greeting">Halo, <strong>{{ $name }}</strong> 👋</p>
+        <p class="greeting">Halo, <strong>{{ $name }}</strong> @include('emails.partials.lucide', ['name' => 'hand', 'size' => 16])</p>
         <h1 class="title">Verifikasi akun Anda</h1>
         <p class="desc">
           Terima kasih telah mendaftar di Jelajahin! Masukkan kode verifikasi
@@ -159,7 +159,7 @@
         <!-- Warning -->
         <div class="warning">
           <p>
-            🔒 <strong>Jangan bagikan kode ini kepada siapapun.</strong>
+            @include('emails.partials.lucide', ['name' => 'lock', 'size' => 14]) <strong>Jangan bagikan kode ini kepada siapapun.</strong>
             Tim Jelajahin tidak akan pernah meminta kode verifikasi Anda.
             Jika Anda tidak mendaftar, abaikan email ini.
           </p>

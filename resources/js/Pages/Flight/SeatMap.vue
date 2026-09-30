@@ -2,13 +2,13 @@
   <div>
     <!-- Error pemuatan kursi -->
     <div v-if="seatsError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center gap-2">
-      <span>⚠</span> {{ seatsError }}
+      <TriangleAlert class="w-4 h-4 shrink-0" aria-hidden="true" /> {{ seatsError }}
       <button @click="loadSeats" class="ml-auto text-red-700 font-semibold hover:underline">Coba lagi</button>
     </div>
 
     <!-- Error lock -->
     <div v-if="lockError" class="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg text-orange-700 text-sm flex items-center gap-2">
-      <span>🔒</span> {{ lockError }}
+      <Lock class="w-4 h-4 shrink-0" aria-hidden="true" /> {{ lockError }}
     </div>
 
     <!-- Loading skeleton -->
@@ -194,7 +194,7 @@
     </template>
 
     <div v-else-if="!seatsLoading" class="bg-white rounded-2xl border border-gray-100 shadow-sm text-center py-12 text-gray-400">
-      <p class="text-3xl mb-3">✈</p>
+      <Plane class="w-8 h-8 mx-auto mb-3 text-gray-300" aria-hidden="true" />
       <p>Data kursi tidak tersedia untuk penerbangan ini.</p>
     </div>
   </div>
@@ -202,6 +202,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
+import { TriangleAlert, Lock, Plane } from 'lucide-vue-next'
 import { useSeatLock, type LockedSeat } from '@/composables/useSeatLock'
 import type { FlightSeat } from '@/types/flight'
 

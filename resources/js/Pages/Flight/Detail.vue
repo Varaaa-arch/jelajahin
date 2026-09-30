@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
+import { Plane, Star } from 'lucide-vue-next'
 import Navbar from '@/Components/Landing/Navbar.vue'
 import AppFooter from '@/Components/Landing/AppFooter.vue'
 import { httpClient } from '@/utils/http'
@@ -140,7 +141,8 @@ onMounted(async () => {
               <div class="flex items-start gap-4">
                 <!-- Airline logo placeholder -->
                 <div class="shrink-0 w-12 h-12 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center text-white font-bold text-sm">
-                  {{ flight?.airline?.code ?? '✈' }}
+                  <template v-if="flight?.airline?.code">{{ flight.airline.code }}</template>
+                  <Plane v-else class="w-5 h-5 text-white/60" aria-hidden="true" />
                 </div>
 
                 <!-- Title -->
@@ -317,7 +319,12 @@ onMounted(async () => {
                   <div class="text-center">
                     <p class="text-white font-black text-4xl leading-none">4.3</p>
                     <div class="flex gap-0.5 mt-1 justify-center">
-                      <span v-for="i in 5" :key="i" :class="i <= 4 ? 'text-yellow-400' : 'text-white/20'" class="text-base">★</span>
+                      <Star
+                        v-for="i in 5" :key="i"
+                        class="w-4 h-4"
+                        :class="i <= 4 ? 'text-yellow-400' : 'text-white/20'"
+                        fill="currentColor" aria-hidden="true"
+                      />
                     </div>
                     <p class="text-white/35 text-xs mt-1">128 ulasan</p>
                   </div>
@@ -352,7 +359,12 @@ onMounted(async () => {
                         <span class="text-white text-sm font-medium">{{ rev.name }}</span>
                       </div>
                       <div class="flex items-center gap-1">
-                        <span v-for="i in 5" :key="i" :class="i <= rev.rating ? 'text-yellow-400' : 'text-white/15'" class="text-xs">★</span>
+                        <Star
+                          v-for="i in 5" :key="i"
+                          class="w-3 h-3"
+                          :class="i <= rev.rating ? 'text-yellow-400' : 'text-white/15'"
+                          fill="currentColor" aria-hidden="true"
+                        />
                         <span class="text-white/30 text-xs ml-1">{{ rev.date }}</span>
                       </div>
                     </div>

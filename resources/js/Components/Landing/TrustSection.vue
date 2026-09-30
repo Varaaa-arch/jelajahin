@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import type { Component } from 'vue'
+import { ShieldCheck, Star, Zap } from 'lucide-vue-next'
+
 interface TrustItem {
   id: number
-  icon: string
+  icon: Component
   iconBg: string
   iconColor: string
   title: string
@@ -11,7 +14,7 @@ interface TrustItem {
 const items: TrustItem[] = [
   {
     id: 1,
-    icon: '🛡️',
+    icon: ShieldCheck,
     iconBg: 'bg-blue-50',
     iconColor: 'text-blue-600',
     title: 'Ultimate Trust',
@@ -19,7 +22,7 @@ const items: TrustItem[] = [
   },
   {
     id: 2,
-    icon: '⚡',
+    icon: Zap,
     iconBg: 'bg-teal/10',
     iconColor: 'text-teal',
     title: 'Instant Booking',
@@ -27,7 +30,7 @@ const items: TrustItem[] = [
   },
   {
     id: 3,
-    icon: '⭐',
+    icon: Star,
     iconBg: 'bg-purple-50',
     iconColor: 'text-purple-600',
     title: 'Premium Comfort',
@@ -48,10 +51,10 @@ const items: TrustItem[] = [
         >
           <!-- Icon -->
           <div
-            :class="['w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 text-2xl', item.iconBg]"
+            :class="['w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5', item.iconBg, item.iconColor]"
             aria-hidden="true"
           >
-            {{ item.icon }}
+            <component :is="item.icon" class="w-7 h-7" />
           </div>
           <h3 class="text-navy font-bold text-lg mb-2.5">{{ item.title }}</h3>
           <p class="text-gray-500 text-sm leading-relaxed">{{ item.description }}</p>

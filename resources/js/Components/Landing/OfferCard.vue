@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Component } from 'vue'
+
 export interface Offer {
   id: number
   title: string
@@ -7,6 +9,7 @@ export interface Offer {
   image: string
   imageAlt: string
   badge: string
+  badgeIcon?: Component
   badgeVariant: 'green' | 'blue' | 'yellow'
   href: string
 }
@@ -39,6 +42,7 @@ const badgeClasses: Record<string, string> = {
       <span
         :class="['absolute top-3 left-3 flex items-center gap-1.5 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm', badgeClasses[offer.badgeVariant]]"
       >
+        <component :is="offer.badgeIcon" v-if="offer.badgeIcon" class="w-3.5 h-3.5" aria-hidden="true" />
         {{ offer.badge }}
       </span>
     </div>

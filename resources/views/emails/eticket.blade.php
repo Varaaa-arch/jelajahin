@@ -13,7 +13,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Your E-Ticket is Ready! 🎫</h1>
+            <h1>Your E-Ticket is Ready! @include('emails.partials.lucide', ['name' => 'ticket', 'size' => 24])</h1>
         </div>
         <div class="content">
             <p>Hello {{ $passenger->first_name }},</p>
