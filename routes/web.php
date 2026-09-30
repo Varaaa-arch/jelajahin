@@ -131,6 +131,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+// Refund routes (user-facing)
+Route::middleware(['auth', 'verified'])->prefix('refunds')->name('refunds.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\RefundController::class, 'index'])->name('index');
+    Route::get('/{refund}', [\App\Http\Controllers\RefundController::class, 'show'])->name('show');
+    Route::post('/', [\App\Http\Controllers\RefundController::class, 'store'])->name('store');
+    Route::delete('/{refund}', [\App\Http\Controllers\RefundController::class, 'cancel'])->name('cancel');
+});
+
 // Admin area (Inertia, tema navy/teal). Filament dipindah ke /sysadmin.
 Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', \App\Http\Controllers\Admin\AdminDashboardController::class)->name('dashboard');
@@ -154,6 +162,11 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::put('/users/{user}/password', [\App\Http\Controllers\Admin\AdminUserController::class, 'resetPassword'])->name('users.password');
     Route::delete('/users/{user}', [\App\Http\Controllers\Admin\AdminUserController::class, 'destroy'])->name('users.destroy');
     Route::get('/reports', [\App\Http\Controllers\Admin\AdminReportController::class, 'index'])->name('reports.index');
+    Route::get('/refunds', [\App\Http\Controllers\Admin\AdminRefundController::class, 'index'])->name('refunds.index');
+    Route::get('/refunds/{refund}', [\App\Http\Controllers\Admin\AdminRefundController::class, 'show'])->name('refunds.show');
+    Route::put('/refunds/{refund}/approve', [\App\Http\Controllers\Admin\AdminRefundController::class, 'approve'])->name('refunds.approve');
+    Route::put('/refunds/{refund}/reject', [\App\Http\Controllers\Admin\AdminRefundController::class, 'reject'])->name('refunds.reject');
+    Route::put('/refunds/{refund}/process', [\App\Http\Controllers\Admin\AdminRefundController::class, 'process'])->name('refunds.process');
     Route::get('/settings', [\App\Http\Controllers\Admin\AdminSettingController::class, 'index'])->name('settings.index');
     Route::put('/settings', [\App\Http\Controllers\Admin\AdminSettingController::class, 'update'])->name('settings.update');
     Route::put('/settings/profile', [\App\Http\Controllers\Admin\AdminSettingController::class, 'updateProfile'])->name('settings.profile');

@@ -28,7 +28,7 @@ class Flight extends Model
     ];
 
     protected $casts = [
-        'departure_date' => 'date',
+        'departure_date' => 'datetime',
         'base_price' => 'float',
     ];
 
