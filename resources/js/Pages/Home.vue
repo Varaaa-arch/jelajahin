@@ -9,6 +9,7 @@ import DestinationsSection from '@/Components/Landing/DestinationsSection.vue'
 import TrustSection from '@/Components/Landing/TrustSection.vue'
 import AppFooter from '@/Components/Landing/AppFooter.vue'
 import OtpModal from '@/Components/OtpModal.vue'
+import { setWebToken, takeReturnTo } from '@/utils/http'
 
 const props = defineProps<{
   canLogin?: boolean
@@ -26,9 +27,12 @@ watch(() => props.verifyOtp, (v) => {
   if (v) showOtp.value = true
 }, { immediate: true })
 
-function handleOtpVerified() {
+function handleOtpVerified(payload?: { token?: string | null }) {
+  if (payload?.token) setWebToken(payload.token)
   showOtp.value = false
-  router.visit(route('dashboard'), { preserveState: false })
+  const returnTo = takeReturnTo()
+  if (returnTo) router.visit(returnTo, { preserveState: false })
+  else router.visit(route('dashboard'), { preserveState: false })
 }
 
 function dismissVerifiedBanner() {

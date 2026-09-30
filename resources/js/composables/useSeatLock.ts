@@ -53,7 +53,10 @@ export function useSeatLock(flightId: string) {
       const res = await goClient.get(`/api/v1/flights/${flightId}/seats`)
       seats.value = res.data.data ?? res.data ?? []
     } catch (err: any) {
-      seatsError.value = err?.response?.data?.message || 'Gagal memuat data kursi'
+      const status = err?.response?.status
+      seatsError.value = status === 401
+        ? 'Sesi habis. Silakan masuk lagi.'
+        : err?.response?.data?.message || 'Gagal memuat data kursi'
     } finally {
       seatsLoading.value = false
     }
@@ -94,6 +97,8 @@ export function useSeatLock(flightId: string) {
 
       if (status === 409) {
         lockError.value = `Kursi ${seatNumber} sudah dikunci penumpang lain`
+      } else if (status === 401) {
+        lockError.value = 'Sesi habis / belum login. Silakan masuk lagi lalu pilih kursi.'
       } else {
         lockError.value = data?.message || `Gagal mengunci kursi ${seatNumber}`
       }
@@ -169,9 +174,12 @@ export function useSeatLock(flightId: string) {
       return false
     } catch (err: any) {
       const failed: string[] = err?.response?.data?.failed_seats ?? []
+      const status = err?.response?.status
       lockError.value = failed.length
         ? `Kursi sudah dikunci oleh penumpang lain: ${failed.join(', ')}`
-        : err?.response?.data?.message || 'Gagal mengunci kursi'
+        : status === 401
+          ? 'Sesi habis / belum login. Silakan masuk lagi lalu pilih kursi.'
+          : err?.response?.data?.message || 'Gagal mengunci kursi'
       return false
     }
   }

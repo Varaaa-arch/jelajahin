@@ -106,9 +106,24 @@ class OtpController extends Controller
             $user->update(['status' => 'active']);
         }
 
-        return response()->json([
+        // Pastikan session login ada (flow modal kadang belum login ulang),
+        // lalu terbitkan token web agar frontend bisa memanggil api.php.
+        if ($user) {
+            if (! Auth::check() || Auth::id() !== $user->id) {
+                Auth::login($user);
+            }
+        }
+
+        return response()->json(array_filter([
             'message'  => 'Email berhasil diverifikasi!',
             'verified' => true,
-        ]);
+            'token'    => $user ? \App\Services\WebAuthToken::issue($user) : null,
+            'user'     => $user ? [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
+                'role'  => $user->role,
+            ] : null,
+        ], fn ($v) => $v !== null));
     }
 }

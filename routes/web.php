@@ -129,6 +129,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Token Sanctum untuk sesi web (dipakai frontend memanggil routes/api.php
+    // via Bearer). Diterbitkan on-demand memakai session cookie; dipanggil
+    // sekali saat boot bila localStorage belum punya token (mis. habis
+    // social login, reload halaman, atau token kedaluwarsa).
+    Route::get('/web/auth-token', function (\Illuminate\Http\Request $request) {
+        return response()->json([
+            'token' => \App\Services\WebAuthToken::issue($request->user()),
+        ]);
+    })->name('web.auth-token');
 });
 
 // Refund routes (user-facing)

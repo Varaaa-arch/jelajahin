@@ -50,10 +50,14 @@ class AuthenticatedSessionController extends Controller
         }
 
         if ($request->wantsJson()) {
+            // Tanpa OTP -> langsung beri token web agar frontend bisa memanggil
+            // routes/api.php (auth:sanctum) via Bearer. Dengan OTP -> token
+            // diterbitkan setelah verifikasi di OtpController@verify.
             return response()->json(array_filter([
                 'needs_otp'  => $needsOtp,
                 'email'      => $user->email,
                 'debug_code' => $debugCode,
+                'token'      => $needsOtp ? null : \App\Services\WebAuthToken::issue($user),
             ], fn ($v) => $v !== null));
         }
 
@@ -65,6 +69,11 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Cabut token web agar tidak bisa dipakai lagi setelah logout.
+        if ($request->user()) {
+            \App\Services\WebAuthToken::revoke($request->user());
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

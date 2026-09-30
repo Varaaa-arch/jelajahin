@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import GuestLayout from '@/Layouts/GuestLayout.vue'
 import OtpModal from '@/Components/OtpModal.vue'
+import { setWebToken } from '@/utils/http'
 
 const props = defineProps<{
   email: string
@@ -10,6 +11,11 @@ const props = defineProps<{
 
 const showOtp = ref(true)
 const otpVerified = ref(false)
+
+function handleOtpVerified(payload?: { token?: string | null }) {
+  if (payload?.token) setWebToken(payload.token)
+  otpVerified.value = true
+}
 </script>
 
 <template>
@@ -30,7 +36,7 @@ const otpVerified = ref(false)
       <OtpModal
         :show="showOtp"
         :email="email"
-        @verified="otpVerified = true"
+        @verified="handleOtpVerified"
         @close="showOtp = false"
       />
 

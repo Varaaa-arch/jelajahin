@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import axios from 'axios'
+import { getWebToken, setWebToken } from '@/utils/http'
 import AuthModal from '@/Components/AuthModal.vue'
 
 const props = withDefaults(defineProps<{
@@ -103,6 +105,13 @@ onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
   document.addEventListener('mousedown', handleDocumentClick)
   isScrolled.value = window.scrollY > 60
+  // Pastikan token web tersedia (mis. habis social login / reload / expired):
+  // diterbitkan on-demand via session cookie, disimpan sekali di localStorage.
+  if (user.value && !getWebToken()) {
+    axios.get('/web/auth-token').then(({ data }) => {
+      if (data?.token) setWebToken(data.token)
+    }).catch(() => { /* abaikan — halaman tetap jalan via session */ })
+  }
 })
 
 onUnmounted(() => {

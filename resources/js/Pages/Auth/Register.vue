@@ -6,7 +6,8 @@ import InputLabel from '@/Components/InputLabel.vue'
 import PrimaryButton from '@/Components/PrimaryButton.vue'
 import TextInput from '@/Components/TextInput.vue'
 import OtpModal from '@/Components/OtpModal.vue'
-import { Head, Link, useForm } from '@inertiajs/vue3'
+import { Head, Link, router, useForm } from '@inertiajs/vue3'
+import { setWebToken, takeReturnTo } from '@/utils/http'
 
 const form = useForm({
     name: '',
@@ -28,6 +29,13 @@ const submit = () => {
             form.reset('password', 'password_confirmation')
         },
     })
+}
+
+function handleOtpVerified(payload?: { token?: string | null }) {
+    if (payload?.token) setWebToken(payload.token)
+    showOtp.value = false
+    const returnTo = takeReturnTo()
+    router.visit(returnTo ?? route('dashboard'))
 }
 </script>
 
@@ -138,7 +146,7 @@ const submit = () => {
                 <OtpModal
                     :show="showOtp"
                     :email="regEmail"
-                    @verified="showOtp = false"
+                    @verified="handleOtpVerified"
                     @close="showOtp = false"
                 />
             </div>

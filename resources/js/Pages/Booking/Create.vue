@@ -312,7 +312,7 @@ async function lanjutKePembayaran() {
     const isTimeout = e?.code === 'ECONNABORTED' || /timeout/i.test(e?.message ?? '')
 
     if (status === 401) {
-      bookingError.value = 'Sesi habis. Silakan masuk lagi.'
+      bookingError.value = 'Sesi habis. Silakan masuk lagi lewat menu — halaman & kursi pilihanmu tetap di sini.'
     } else if (status === 422 && (errCode === 'seat_lock_invalid' || /lock|expired/i.test(serverMsg))) {
       seatError.value = 'Kunci kursi kedaluwarsa / dipakai orang lain. Pilih kursi lagi.'
       bookingError.value = seatError.value

@@ -2,6 +2,7 @@
 import { ref, watch, nextTick } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 import axios from 'axios'
+import { setWebToken, takeReturnTo } from '@/utils/http'
 import OtpModal from '@/Components/OtpModal.vue'
 
 // ─── Props & Emits ────────────────────────────────────────────────────────────
@@ -69,6 +70,7 @@ async function submitLogin() {
       otpDebugCode.value    = data.debug_code ?? null
       showOtpModal.value    = true
     } else {
+      if (data.token) setWebToken(data.token)
       emit('close')
       router.reload({ preserveState: false })
     }
@@ -128,12 +130,17 @@ async function submitRegister() {
   }
 }
 
-function handleOtpVerified() {
+function handleOtpVerified(payload?: { token?: string | null }) {
+  if (payload?.token) setWebToken(payload.token)
   showOtpModal.value = false
   otpDebugCode.value = null
   emit('verified')
   emit('close')
-  router.visit(route('dashboard'), { preserveState: false })
+  // Kembali ke halaman asal bila ada (mis. booking yang terpotong sesi),
+  // fallback ke dashboard seperti sebelumnya.
+  const returnTo = takeReturnTo()
+  if (returnTo) router.visit(returnTo, { preserveState: false })
+  else router.visit(route('dashboard'), { preserveState: false })
 }
 
 function close() {
