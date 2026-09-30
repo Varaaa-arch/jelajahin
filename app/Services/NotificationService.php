@@ -4,7 +4,12 @@ namespace App\Services;
 
 use App\Models\Booking;
 use App\Models\ETicket;
+use App\Models\Refund;
 use App\Notifications\BookingConfirmedNotification;
+use App\Notifications\RefundApprovedNotification;
+use App\Notifications\RefundProcessedNotification;
+use App\Notifications\RefundRejectedNotification;
+use App\Notifications\RefundRequestedNotification;
 use App\Notifications\TicketReadyNotification;
 
 class NotificationService
@@ -51,6 +56,54 @@ class NotificationService
         $etickets = ETicket::where('booking_id', $booking->id)->get();
         foreach ($etickets as $eticket) {
             $this->notifyTicketReady($eticket);
+        }
+    }
+
+    public function notifyRefundRequested(Refund $refund): void
+    {
+        try {
+            if ($refund->user) {
+                $refund->user->notify(new RefundRequestedNotification($refund));
+                \Log::info("Refund requested notification sent for refund: {$refund->refund_number}");
+            }
+        } catch (\Exception $e) {
+            \Log::error("Failed to send refund requested notification: {$e->getMessage()}");
+        }
+    }
+
+    public function notifyRefundApproved(Refund $refund): void
+    {
+        try {
+            if ($refund->user) {
+                $refund->user->notify(new RefundApprovedNotification($refund));
+                \Log::info("Refund approved notification sent for refund: {$refund->refund_number}");
+            }
+        } catch (\Exception $e) {
+            \Log::error("Failed to send refund approved notification: {$e->getMessage()}");
+        }
+    }
+
+    public function notifyRefundRejected(Refund $refund): void
+    {
+        try {
+            if ($refund->user) {
+                $refund->user->notify(new RefundRejectedNotification($refund));
+                \Log::info("Refund rejected notification sent for refund: {$refund->refund_number}");
+            }
+        } catch (\Exception $e) {
+            \Log::error("Failed to send refund rejected notification: {$e->getMessage()}");
+        }
+    }
+
+    public function notifyRefundProcessed(Refund $refund): void
+    {
+        try {
+            if ($refund->user) {
+                $refund->user->notify(new RefundProcessedNotification($refund));
+                \Log::info("Refund processed notification sent for refund: {$refund->refund_number}");
+            }
+        } catch (\Exception $e) {
+            \Log::error("Failed to send refund processed notification: {$e->getMessage()}");
         }
     }
 }

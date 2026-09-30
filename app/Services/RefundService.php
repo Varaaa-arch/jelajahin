@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\DB;
 
 class RefundService
 {
+    public function __construct(
+        private NotificationService $notificationService
+    ) {}
+
     public function isEligibleForRefund(Booking $booking): array
     {
         if ($booking->status !== 'confirmed') {
@@ -69,6 +73,8 @@ class RefundService
 
             $booking->update(['status' => 'refund_requested']);
 
+            $this->notificationService->notifyRefundRequested($refund);
+
             return $refund;
         });
     }
@@ -84,6 +90,8 @@ class RefundService
                 'status' => Refund::STATUS_APPROVED,
                 'approved_amount' => $approvedAmount ?? $refund->requested_amount,
             ]);
+
+            $this->notificationService->notifyRefundApproved($refund);
 
             return $refund;
         });
@@ -105,6 +113,8 @@ class RefundService
             if ($booking && $booking->status === 'refund_requested') {
                 $booking->update(['status' => 'confirmed']);
             }
+
+            $this->notificationService->notifyRefundRejected($refund);
 
             return $refund;
         });
@@ -133,6 +143,8 @@ class RefundService
                 $booking->update(['status' => 'refunded']);
                 $this->releaseSeats($booking);
             }
+
+            $this->notificationService->notifyRefundProcessed($refund);
 
             return $refund;
         });
