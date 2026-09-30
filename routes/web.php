@@ -130,6 +130,11 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/unread-count', [\App\Http\Controllers\NotificationController::class, 'unreadCount'])->name('notifications.unread');
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+
     // Token Sanctum untuk sesi web (dipakai frontend memanggil routes/api.php
     // via Bearer). Diterbitkan on-demand memakai session cookie; dipanggil
     // sekali saat boot bila localStorage belum punya token (mis. habis
@@ -164,6 +169,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::put('/orders/{order}/status', [\App\Http\Controllers\Admin\AdminOrderController::class, 'updateStatus'])->name('orders.status');
     Route::put('/orders/{order}/reschedule', [\App\Http\Controllers\Admin\AdminOrderController::class, 'reschedule'])->name('orders.reschedule');
     Route::get('/orders/{order}/receipt', [\App\Http\Controllers\Admin\AdminOrderController::class, 'receipt'])->name('orders.receipt');
+    Route::post('/orders/{order}/resend', [\App\Http\Controllers\Admin\AdminOrderController::class, 'resend'])->name('orders.resend');
     Route::get('/payments', [\App\Http\Controllers\Admin\AdminPaymentController::class, 'index'])->name('payments.index');
     Route::put('/payments/{payment}', [\App\Http\Controllers\Admin\AdminPaymentController::class, 'updateStatus'])->name('payments.status');
     Route::get('/users', [\App\Http\Controllers\Admin\AdminUserController::class, 'index'])->name('users.index');
@@ -177,6 +183,8 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::put('/refunds/{refund}/approve', [\App\Http\Controllers\Admin\AdminRefundController::class, 'approve'])->name('refunds.approve');
     Route::put('/refunds/{refund}/reject', [\App\Http\Controllers\Admin\AdminRefundController::class, 'reject'])->name('refunds.reject');
     Route::put('/refunds/{refund}/process', [\App\Http\Controllers\Admin\AdminRefundController::class, 'process'])->name('refunds.process');
+    Route::get('/broadcast', [\App\Http\Controllers\Admin\AdminAnnouncementController::class, 'index'])->name('broadcast.index');
+    Route::post('/broadcast', [\App\Http\Controllers\Admin\AdminAnnouncementController::class, 'store'])->name('broadcast.store');
     Route::get('/settings', [\App\Http\Controllers\Admin\AdminSettingController::class, 'index'])->name('settings.index');
     Route::put('/settings', [\App\Http\Controllers\Admin\AdminSettingController::class, 'update'])->name('settings.update');
     Route::put('/settings/profile', [\App\Http\Controllers\Admin\AdminSettingController::class, 'updateProfile'])->name('settings.profile');

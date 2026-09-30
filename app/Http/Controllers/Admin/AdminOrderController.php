@@ -391,6 +391,32 @@ class AdminOrderController extends Controller
         return $pdf->download("etiket-{$order->pnr_code}.pdf");
     }
 
+    /** Kirim ulang email notif (booking + e-ticket + invoice) untuk testing/operasional. */
+    public function resend(Request $request, Booking $order)
+    {
+        $order->load(['user', 'flight', 'passengers', 'etickets', 'invoice']);
+
+        try {
+            app(\App\Services\NotificationService::class)->notifyBookingComplete($order);
+        } catch (\Throwable $e) {
+            \Log::error('Resend booking notification failed', ['order' => $order->id, 'error' => $e->getMessage()]);
+        }
+
+        try {
+            app(\App\Services\ETicketService::class)->generateAndSendETickets($order);
+        } catch (\Throwable $e) {
+            \Log::error('Resend e-ticket failed', ['order' => $order->id, 'error' => $e->getMessage()]);
+        }
+
+        try {
+            app(\App\Services\InvoiceService::class)->generateAndSendInvoice($order);
+        } catch (\Throwable $e) {
+            \Log::error('Resend invoice failed', ['order' => $order->id, 'error' => $e->getMessage()]);
+        }
+
+        return $this->redirectAfter($request, $order, "Email notifikasi untuk {$order->pnr_code} dimasukkan antrean kirim.");
+    }
+
     /** Opsi flight pengganti untuk modal reschedule. */
     private function rescheduleFlightOptions(): array
     {

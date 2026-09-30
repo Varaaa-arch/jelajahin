@@ -4,6 +4,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import {
     BarChart3,
     LayoutDashboard,
+    Megaphone,
     Plane,
     Settings,
     ShoppingCart,
@@ -31,6 +32,7 @@ const navItems: NavItem[] = [
     { key: 'payments', label: 'Manage Payments', href: '/admin/payments', icon: Wallet },
     { key: 'users', label: 'Manage Users', href: '/admin/users', icon: User },
     { key: 'reports', label: 'Reports', href: '/admin/reports', icon: BarChart3 },
+    { key: 'broadcast', label: 'Broadcast', href: '/admin/broadcast', icon: Megaphone },
     { key: 'settings', label: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
@@ -61,6 +63,10 @@ function syncActive(): void {
     }
     if (path.startsWith('/admin/reports')) {
         activeKey.value = 'reports';
+        return;
+    }
+    if (path.startsWith('/admin/broadcast')) {
+        activeKey.value = 'broadcast';
         return;
     }
     if (path.startsWith('/admin/settings')) {

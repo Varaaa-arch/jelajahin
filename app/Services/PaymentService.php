@@ -52,8 +52,9 @@ class PaymentService
             // Non-blocking: kegagalan generate tidak menggagalkan pembayaran.
             $this->generateDocuments($payment->booking);
 
-            // Send notifications
+            // Send notifications (user) + alert admin
             $this->notificationService->notifyBookingComplete($payment->booking);
+            $this->notificationService->notifyAdminsNewBooking($payment->booking->fresh(['user', 'flight']));
 
             return [
                 'success' => true,
@@ -105,6 +106,7 @@ class PaymentService
             $this->generateDocuments($payment->booking);
 
             $this->notificationService->notifyBookingComplete($payment->booking);
+            $this->notificationService->notifyAdminsNewBooking($payment->booking->fresh(['user', 'flight']));
         } elseif (in_array($mappedStatus, ['expired', 'deny', 'failed'])) {
             $this->updateBookingStatus($payment->booking, 'payment_failed');
         }
@@ -239,22 +241,27 @@ class PaymentService
      */
     private function generateDocuments(Booking $booking): void
     {
+        $fresh = $booking->fresh(['passengers', 'flight']);
+
         try {
-            app(ETicketService::class)->generateETicket($booking->fresh(['passengers', 'flight']));
-            Log::info("PaymentService: e-tickets generated for booking {$booking->id}");
+            $ok = app(ETicketService::class)->generateAndSendETickets($fresh ?? $booking);
+            Log::info("PaymentService: e-tickets generated+sent for booking {$booking->id}", ['ok' => $ok]);
         } catch (\Throwable $e) {
-            Log::error("PaymentService: failed to generate e-tickets", [
+            Log::error("PaymentService: failed to generate/send e-tickets", [
                 'booking_id' => $booking->id,
                 'error'      => $e->getMessage(),
             ]);
         }
 
         try {
-            $invoice = app(InvoiceService::class)->generateInvoice($booking);
-            app(InvoiceService::class)->markAsPaid($invoice);
-            Log::info("PaymentService: invoice generated for booking {$booking->id}");
+            $invoiceService = app(InvoiceService::class);
+            $ok = $invoiceService->generateAndSendInvoice($fresh ?? $booking);
+            // Tandai lunas setelah invoice terkirim (idempoten).
+            $invoice = $invoiceService->generateInvoice($booking);
+            $invoiceService->markAsPaid($invoice);
+            Log::info("PaymentService: invoice generated+sent for booking {$booking->id}", ['ok' => $ok]);
         } catch (\Throwable $e) {
-            Log::error("PaymentService: failed to generate invoice", [
+            Log::error("PaymentService: failed to generate/send invoice", [
                 'booking_id' => $booking->id,
                 'error'      => $e->getMessage(),
             ]);

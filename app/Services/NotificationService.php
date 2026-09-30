@@ -5,12 +5,16 @@ namespace App\Services;
 use App\Models\Booking;
 use App\Models\ETicket;
 use App\Models\Refund;
+use App\Models\User;
+use App\Notifications\AdminNewBookingNotification;
+use App\Notifications\AdminRefundRequestedNotification;
 use App\Notifications\BookingConfirmedNotification;
 use App\Notifications\RefundApprovedNotification;
 use App\Notifications\RefundProcessedNotification;
 use App\Notifications\RefundRejectedNotification;
 use App\Notifications\RefundRequestedNotification;
 use App\Notifications\TicketReadyNotification;
+use Illuminate\Support\Facades\Notification;
 
 class NotificationService
 {
@@ -66,8 +70,48 @@ class NotificationService
                 $refund->user->notify(new RefundRequestedNotification($refund));
                 \Log::info("Refund requested notification sent for refund: {$refund->refund_number}");
             }
+            $this->notifyAdminsRefundRequested($refund);
         } catch (\Exception $e) {
             \Log::error("Failed to send refund requested notification: {$e->getMessage()}");
+        }
+    }
+
+    /**
+     * Alert ke semua admin saat ada booking lunas (email + database).
+     */
+    public function notifyAdminsNewBooking(Booking $booking): void
+    {
+        try {
+            $admins = User::where('role', 'admin')->get();
+            if ($admins->isEmpty()) {
+                return;
+            }
+            Notification::send($admins, new AdminNewBookingNotification($booking));
+            \Log::info("Admin new-booking alert sent for booking: {$booking->pnr_code}");
+        } catch (\Exception $e) {
+            \Log::error("Failed to send admin new-booking alert: {$e->getMessage()}");
+        }
+    }
+
+    /**
+     * Alert ke semua admin saat ada refund request baru.
+     */
+    public function notifyAdminsRefundRequested(Refund $refund): void
+    {
+        try {
+            $admins = User::where('role', 'admin')->get();
+            if ($admins->isEmpty()) {
+                return;
+            }
+            // Jangan kirim dobel ke requester kalau dia admin.
+            $admins = $admins->reject(fn ($u) => $refund->user && $u->id === $refund->user->id);
+            if ($admins->isEmpty()) {
+                return;
+            }
+            Notification::send($admins, new AdminRefundRequestedNotification($refund));
+            \Log::info("Admin refund-requested alert sent for refund: {$refund->refund_number}");
+        } catch (\Exception $e) {
+            \Log::error("Failed to send admin refund-requested alert: {$e->getMessage()}");
         }
     }
 

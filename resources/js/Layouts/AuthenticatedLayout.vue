@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
+import NotificationBell from '@/Components/NotificationBell.vue';
 
 const showingSidebar = ref(false);
 const activeLink = ref('dashboard');
@@ -256,7 +257,8 @@ onUnmounted(() => {
                     </div>
                 </div>
 
-                <div class="relative">
+                <div class="relative flex items-center gap-1">
+                    <NotificationBell />
                     <Dropdown align="right" width="48">
                         <template #trigger>
                             <button

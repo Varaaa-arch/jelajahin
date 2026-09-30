@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { Bell, History, Search } from 'lucide-vue-next';
+import { History, Search } from 'lucide-vue-next';
+import { Link } from '@inertiajs/vue3';
+import NotificationBell from '@/Components/NotificationBell.vue';
 
 defineProps<{
     userName: string;
@@ -36,21 +38,14 @@ defineEmits<{
         </div>
 
         <div class="flex items-center gap-2 sm:gap-4">
-            <button
-                type="button"
-                class="relative rounded-full p-2 text-gray-600 hover:bg-gray-100"
-                aria-label="Notifikasi"
-            >
-                <Bell class="h-5 w-5" />
-                <span class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-600" />
-            </button>
-            <button
-                type="button"
+            <NotificationBell />
+            <Link
+                href="/notifications"
                 class="rounded-full p-2 text-gray-600 hover:bg-gray-100"
                 aria-label="Riwayat"
             >
                 <History class="h-5 w-5" />
-            </button>
+            </Link>
             <div class="hidden h-8 w-px bg-gray-200 sm:block" />
             <div class="flex items-center gap-3">
                 <span
