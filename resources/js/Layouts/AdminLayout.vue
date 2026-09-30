@@ -85,16 +85,10 @@ onUnmounted(() => {
     <div class="min-h-screen bg-gray-50 font-sans">
         <!-- Sidebar desktop -->
         <aside class="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-navy lg:flex">
-            <div class="flex h-16 items-center gap-3 border-b border-white/10 px-5">
-                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-navy">
-                    <Plane class="h-5 w-5" />
-                </div>
-                <div>
-                    <p class="text-lg font-black leading-none text-white">Jelajahi</p>
-                    <p class="mt-1 text-[11px] font-semibold uppercase tracking-widest text-teal-300">
-                        Enterprise Admin
-                    </p>
-                </div>
+            <div class="flex h-16 items-center border-b border-white/10 px-5">
+                <Link href="/admin/dashboard" class="hover:opacity-90 transition-opacity" aria-label="Ke dashboard admin">
+                    <img src="/images/logo.png" alt="Jelajahin" class="h-28 w-auto brightness-0 invert" />
+                </Link>
             </div>
 
             <nav class="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-4">
@@ -131,16 +125,10 @@ onUnmounted(() => {
             <div class="absolute inset-0 bg-navy/60 backdrop-blur-sm" @click="showingSidebar = false" />
             <div class="absolute inset-y-0 left-0 flex w-72 flex-col bg-navy shadow-2xl">
                 <div class="flex h-16 items-center justify-between border-b border-white/10 px-5">
-                    <div class="flex items-center gap-3">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-navy">
-                            <Plane class="h-5 w-5" />
-                        </div>
-                        <div>
-                            <p class="text-lg font-black leading-none text-white">Jelajahi</p>
-                            <p class="mt-1 text-[11px] font-semibold uppercase tracking-widest text-teal-300">
-                                Enterprise Admin
-                            </p>
-                        </div>
+                    <div class="flex items-center">
+                        <Link href="/admin/dashboard" class="hover:opacity-90 transition-opacity" aria-label="Ke dashboard admin" @click="showingSidebar = false">
+                            <img src="/images/logo.png" alt="Jelajahin" class="h-28 w-auto brightness-0 invert" />
+                        </Link>
                     </div>
                     <button
                         type="button"
