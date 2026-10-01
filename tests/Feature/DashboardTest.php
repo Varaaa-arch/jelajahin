@@ -120,4 +120,61 @@ class DashboardTest extends TestCase
                 ->has('history', 1)
                 ->where('history.0.pnr_code', 'JLN-XYZ789'));
     }
+
+    public function test_dashboard_shows_awaiting_confirmation_as_upcoming(): void
+    {
+        $user = User::factory()->create();
+
+        $airline = Airline::create(['name' => 'Garuda Indonesia', 'code' => 'GA']);
+        $origin = Airport::create(['code' => 'CGK', 'name' => 'Soekarno-Hatta', 'city' => 'Jakarta', 'country' => 'Indonesia']);
+        $destination = Airport::create(['code' => 'DPS', 'name' => 'Ngurah Rai', 'city' => 'Denpasar', 'country' => 'Indonesia']);
+        $route = Route::create([
+            'airline_id' => $airline->id,
+            'origin_airport_id' => $origin->id,
+            'destination_airport_id' => $destination->id,
+            'flight_number_prefix' => 'GA',
+            'is_active' => true,
+        ]);
+
+        $flight = Flight::create([
+            'route_id' => $route->id,
+            'flight_number' => 'GA103',
+            'departure_date' => now()->addDays(5)->toDateString(),
+            'departure_time' => '07:00:00',
+            'arrival_time' => '09:00:00',
+            'base_price' => 850000,
+            'status' => 'scheduled',
+            'seats_available' => 50,
+        ]);
+
+        $booking = Booking::create([
+            'pnr_code' => 'JLN-WAIT01',
+            'user_id' => $user->id,
+            'flight_id' => $flight->id,
+            'base_amount' => 850000,
+            'tax_amount' => 105000,
+            'total_price' => 955000,
+            'passenger_count' => 1,
+            'status' => 'awaiting_confirmation',
+        ]);
+
+        Payment::create([
+            'booking_id' => $booking->id,
+            'transaction_id' => 'TRX-WAIT01',
+            'payment_method' => 'fake_gateway',
+            'amount' => 955000,
+            'status' => 'success',
+            'token' => 'tok_wait01',
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Dashboard')
+                ->has('upcoming', 1)
+                ->where('upcoming.0.pnr_code', 'JLN-WAIT01')
+                ->where('upcoming.0.status', 'awaiting_confirmation'));
+    }
 }

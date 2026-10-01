@@ -90,6 +90,10 @@ const statusMeta = (status: string): { label: string; classes: string } => {
             label: 'Menunggu Pembayaran',
             classes: 'bg-amber-100 text-amber-700',
         },
+        awaiting_confirmation: {
+            label: 'Menunggu Konfirmasi Admin',
+            classes: 'bg-amber-100 text-amber-700',
+        },
         confirmed: {
             label: 'Dikonfirmasi',
             classes: 'bg-teal-100 text-teal-700',

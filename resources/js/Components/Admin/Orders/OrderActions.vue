@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { CalendarClock, ChevronDown, PencilLine, Printer, Settings2, XCircle } from 'lucide-vue-next';
+import { CalendarClock, ChevronDown, CircleCheckBig, PencilLine, Printer, Settings2, XCircle } from 'lucide-vue-next';
 import type { AdminOrderDetail } from '@/types/admin-order';
 
 defineProps<{ order: AdminOrderDetail }>();
@@ -10,6 +10,7 @@ defineEmits<{
     (e: 'modify'): void;
     (e: 'receipt', doc: 'eticket' | 'invoice'): void;
     (e: 'cancel'): void;
+    (e: 'approve'): void;
 }>();
 
 const receiptOpen = ref(false);
@@ -23,6 +24,15 @@ const receiptOpen = ref(false);
         </h2>
 
         <div class="mt-4 flex flex-col gap-2.5">
+            <button
+                v-if="order.order_status === 'awaiting_confirmation'"
+                type="button"
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-teal px-4 py-3 text-xs font-bold tracking-wide text-white transition hover:bg-teal-600"
+                @click="$emit('approve')"
+            >
+                <CircleCheckBig class="h-4 w-4" />
+                APPROVE ORDER
+            </button>
             <button
                 type="button"
                 class="inline-flex items-center justify-center gap-2 rounded-xl bg-navy px-4 py-3 text-xs font-bold tracking-wide text-white transition hover:bg-navy-mid"

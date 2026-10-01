@@ -65,12 +65,22 @@ class PaymentFlowTest extends TestCase
         return $booking;
     }
 
+    /**
+     * API /api/payments/* dijaga auth:sanctum (Bearer token).
+     * Helper ini create token untuk user dan ikut kiri Authorization header.
+     */
+    private function withBearer(User $user)
+    {
+        $token = $user->createToken('api-test')->plainTextToken;
+        return $this->withHeader('Authorization', 'Bearer '.$token);
+    }
+
     public function test_full_payment_flow_initiate_and_process(): void
     {
         $user = User::factory()->create();
         $booking = $this->makeBooking($user);
 
-        $initiate = $this->postJson('/api/payments/initiate', [
+        $initiate = $this->withBearer($user)->postJson('/api/payments/initiate', [
             'booking_id' => $booking->id,
         ]);
 
@@ -81,7 +91,7 @@ class PaymentFlowTest extends TestCase
         $token = $initiate->json('data.token');
         $this->assertNotEmpty($token);
 
-        $process = $this->postJson('/api/payments/process', [
+        $process = $this->withBearer($user)->postJson('/api/payments/process', [
             'token' => $token,
         ]);
 
@@ -93,26 +103,61 @@ class PaymentFlowTest extends TestCase
             'token' => $token,
             'status' => 'success',
         ]);
+
+        // Pembayaran sukses tapi booking MENUNGGU persetujuan admin — belum confirmed.
         $this->assertDatabaseHas('bookings', [
             'id' => $booking->id,
-            'status' => 'confirmed',
+            'status' => 'awaiting_confirmation',
         ]);
 
-        // Dokumen otomatis terbuat saat pembayaran sukses (muncul di dashboard)
+        // Dokumen belak tergenerate sampai admin persetujui.
+        $this->assertDatabaseMissing('etickets', ['booking_id' => $booking->id]);
+        $this->assertDatabaseMissing('invoices', ['booking_id' => $booking->id]);
+    }
+
+    public function test_admin_approval_finalizes_awaiting_booking(): void
+    {
+        $user = User::factory()->create();
+        $booking = $this->makeBooking($user);
+
+        $initiate = $this->withBearer($user)->postJson('/api/payments/initiate', [
+            'booking_id' => $booking->id,
+        ]);
+        $token = $initiate->json('data.token');
+
+        $this->withBearer($user)->postJson('/api/payments/process', [
+            'token' => $token,
+        ])->assertStatus(200);
+
+        $this->assertSame('awaiting_confirmation', $booking->fresh()->status);
+
+        // Admin persetujui order dari panel.
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)
+            ->put("/admin/orders/{$booking->id}/status", ['status' => 'confirmed'])
+            ->assertRedirect(route('admin.orders.index'));
+
+        $this->assertSame('confirmed', $booking->fresh()->status);
+
+        // Kursi + dokumen finalize hanya setelah persetujuan admin.
         $this->assertDatabaseHas('etickets', ['booking_id' => $booking->id]);
         $this->assertDatabaseHas('invoices', ['booking_id' => $booking->id, 'status' => 'paid']);
     }
 
     public function test_initiate_fails_for_unknown_booking(): void
     {
-        $this->postJson('/api/payments/initiate', [
+        $user = User::factory()->create();
+
+        $this->withBearer($user)->postJson('/api/payments/initiate', [
             'booking_id' => '00000000-0000-0000-0000-000000000000',
         ])->assertStatus(404);
     }
 
     public function test_process_fails_for_unknown_token(): void
     {
-        $this->postJson('/api/payments/process', [
+        $user = User::factory()->create();
+
+        $this->withBearer($user)->postJson('/api/payments/process', [
             'token' => 'FAKE_TOKEN_UNKNOWN',
         ])->assertStatus(400);
     }

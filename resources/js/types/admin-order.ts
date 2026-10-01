@@ -1,5 +1,6 @@
 export type OrderStatus =
     | 'pending'
+    | 'awaiting_confirmation'
     | 'confirmed'
     | 'completed'
     | 'cancelled'
@@ -103,6 +104,7 @@ export interface RescheduleFlightOption {
 export const ORDER_STATUS_META: Record<string, { label: string; classes: string }> = {
     confirmed: { label: 'Confirmed', classes: 'bg-teal/15 text-teal-dark' },
     pending: { label: 'Pending', classes: 'bg-amber-100 text-amber-800' },
+    awaiting_confirmation: { label: 'Awaiting Approval', classes: 'bg-orange-100 text-orange-800' },
     completed: { label: 'Completed', classes: 'bg-navy/10 text-navy' },
     cancelled: { label: 'Cancelled', classes: 'bg-red-100 text-red-700' },
     refund_requested: { label: 'Refund Requested', classes: 'bg-orange-100 text-orange-800' },
@@ -119,7 +121,8 @@ export const PAYMENT_STATUS_META: Record<string, { label: string; classes: strin
 };
 
 export const ORDER_TRANSITIONS: Record<string, string[]> = {
-    pending: ['confirmed', 'cancelled'],
+    pending: ['cancelled'],
+    awaiting_confirmation: ['confirmed', 'cancelled'],
     confirmed: ['completed', 'cancelled', 'refund_requested'],
     refund_requested: ['refunded', 'cancelled', 'confirmed'],
     completed: [],

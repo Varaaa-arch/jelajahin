@@ -30,11 +30,11 @@ class DashboardController extends Controller
 
         $today = now()->startOfDay();
 
-        $upcoming = $bookings->filter(fn (array $b) => in_array($b['status'], ['pending', 'confirmed'])
+        $upcoming = $bookings->filter(fn (array $b) => in_array($b['status'], ['pending', 'awaiting_confirmation', 'confirmed'])
             && Carbon::parse($b['flight']['departure_date'])->startOfDay()->gte($today))
             ->values();
 
-        $history = $bookings->filter(fn (array $b) => !in_array($b['status'], ['pending', 'confirmed'])
+        $history = $bookings->filter(fn (array $b) => !in_array($b['status'], ['pending', 'awaiting_confirmation', 'confirmed'])
             || Carbon::parse($b['flight']['departure_date'])->startOfDay()->lt($today))
             ->values();
 

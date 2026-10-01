@@ -33,6 +33,7 @@ function onSearchInput(): void {
 
 const orderPills = [
     { key: 'all', label: 'All' },
+    { key: 'awaiting_confirmation', label: 'Awaiting Approval' },
     { key: 'confirmed', label: 'Confirmed' },
     { key: 'pending', label: 'Pending' },
     { key: 'completed', label: 'Completed' },

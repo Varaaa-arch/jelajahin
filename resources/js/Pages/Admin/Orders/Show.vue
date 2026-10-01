@@ -77,6 +77,10 @@ function putAction(url: string, payload: Record<string, unknown>, onOk: () => vo
 function viewReceipt(doc: 'eticket' | 'invoice'): void {
     window.open(`/admin/orders/${props.order.id}/receipt?doc=${doc}`, '_blank');
 }
+
+function approveOrder(): void {
+    putAction(`/admin/orders/${props.order.id}/status`, { status: 'confirmed' }, () => {});
+}
 </script>
 
 <template>
@@ -120,6 +124,7 @@ function viewReceipt(doc: 'eticket' | 'invoice'): void {
                     @modify="resetAndOpen('modify')"
                     @receipt="viewReceipt"
                     @cancel="resetAndOpen('cancel')"
+                    @approve="approveOrder"
                 />
             </div>
         </div>

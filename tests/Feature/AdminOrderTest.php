@@ -165,13 +165,13 @@ class AdminOrderTest extends TestCase
                 ->where('orders.data.0.pnr', 'ORDT03'));
     }
 
-    public function test_admin_can_confirm_pending_order(): void
+    public function test_admin_can_approve_awaiting_confirmation_order(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $user = User::factory()->create();
         ['route' => $route] = $this->seedRoute();
         $flight = $this->makeFlight($route->id, 'GA101', now()->addDays(5)->toDateString());
-        $booking = $this->makeBooking($user, $flight, 'ORDT04', 'pending');
+        $booking = $this->makeBooking($user, $flight, 'ORDT04', 'awaiting_confirmation');
 
         $this->actingAs($admin)
             ->put("/admin/orders/{$booking->id}/status", ['status' => 'confirmed'])
@@ -187,6 +187,11 @@ class AdminOrderTest extends TestCase
         ['route' => $route] = $this->seedRoute();
         $flight = $this->makeFlight($route->id, 'GA101', now()->addDays(5)->toDateString());
         $booking = $this->makeBooking($user, $flight, 'ORDT05', 'pending');
+
+        // Belun dibayar (pending) tidak boleh langsung dikonfirmasi — harus dibayar dulu.
+        $this->actingAs($admin)
+            ->put("/admin/orders/{$booking->id}/status", ['status' => 'confirmed'])
+            ->assertSessionHasErrors('status');
 
         $this->actingAs($admin)
             ->put("/admin/orders/{$booking->id}/status", ['status' => 'completed'])
@@ -374,7 +379,7 @@ class AdminOrderTest extends TestCase
         $user = User::factory()->create();
         ['route' => $route] = $this->seedRoute();
         $flight = $this->makeFlight($route->id, 'GA101', now()->addDays(5)->toDateString());
-        $booking = $this->makeBooking($user, $flight, 'ORDT14', 'pending');
+        $booking = $this->makeBooking($user, $flight, 'ORDT14', 'awaiting_confirmation');
 
         $this->actingAs($admin)
             ->put("/admin/orders/{$booking->id}/status", ['status' => 'confirmed', 'redirect_to' => 'show'])

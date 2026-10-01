@@ -22,6 +22,7 @@ defineEmits<{
     (e: 'cancel', order: AdminOrder): void;
     (e: 'reschedule', order: AdminOrder): void;
     (e: 'status', order: AdminOrder): void;
+    (e: 'approve', order: AdminOrder): void;
 }>();
 
 const expandedId = ref<string | null>(null);
@@ -255,6 +256,14 @@ function payMeta(status: string): { label: string; classes: string } {
                                                 </span>
                                             </div>
                                             <div class="mt-auto flex flex-wrap gap-2 pt-4">
+                                                <button
+                                                    v-if="o.order_status === 'awaiting_confirmation'"
+                                                    type="button"
+                                                    class="rounded-lg bg-teal px-3 py-2 text-[11px] font-bold tracking-wide text-white transition hover:bg-teal-600"
+                                                    @click="$emit('approve', o)"
+                                                >
+                                                    APPROVE
+                                                </button>
                                                 <button
                                                     type="button"
                                                     class="rounded-lg border border-gray-800 px-3 py-2 text-[11px] font-bold tracking-wide text-gray-900 transition hover:bg-gray-900 hover:text-white"

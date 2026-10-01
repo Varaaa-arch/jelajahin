@@ -109,6 +109,7 @@ class AdminDashboardController extends Controller
         $colors = [
             'completed' => '#0d1117',
             'confirmed' => '#0F766E',
+            'awaiting_confirmation' => '#B45309',
             'pending' => '#D1D5DB',
             'cancelled' => '#DC2626',
             'refund_requested' => '#F59E0B',
