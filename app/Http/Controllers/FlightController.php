@@ -19,7 +19,7 @@ class FlightController extends Controller
             'departure_date' => 'required|date',
         ]);
 
-        $flights = Flight::with(['route.originAirport', 'route.destinationAirport'])
+        $flights = Flight::with(['route.airline', 'route.originAirport', 'route.destinationAirport'])
             ->whereHas('route', function ($q) use ($request) {
                 $q->whereHas('originAirport', fn($q) => $q->where('code', strtoupper($request->origin)))
                   ->whereHas('destinationAirport', fn($q) => $q->where('code', strtoupper($request->destination)));
@@ -29,7 +29,7 @@ class FlightController extends Controller
             ->get();
 
         return response()->json([
-            'data' => $flights,
+            'data' => $flights->map(fn (Flight $flight) => $this->presentFlight($flight)),
         ]);
     }
 
@@ -38,12 +38,32 @@ class FlightController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        $flight = Flight::with(['route.originAirport', 'route.destinationAirport'])
+        $flight = Flight::with(['route.airline', 'route.originAirport', 'route.destinationAirport'])
             ->findOrFail($id);
 
         return response()->json([
-            'data' => $flight,
+            'data' => $this->presentFlight($flight),
         ]);
+    }
+
+    /**
+     * Bentuk presentasi untuk frontend (Inertia Vue).
+     *
+     * Halaman Flight/Results, Flight/Detail dan Booking/Review membaca field
+     * flat: origin, destination, airline, estimated_duration_minutes.
+     * Relasi mentah `route` tetap disertakan agar kode lama tidak rusak.
+     */
+    private function presentFlight(Flight $flight): array
+    {
+        $data = $flight->toArray();
+        $route = $flight->route;
+
+        $data['origin'] = $route?->originAirport;
+        $data['destination'] = $route?->destinationAirport;
+        $data['airline'] = $route?->airline;
+        $data['estimated_duration_minutes'] = $route?->estimated_duration_minutes;
+
+        return $data;
     }
 
     /**

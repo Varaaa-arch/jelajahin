@@ -38,7 +38,7 @@ const infants  = ref(props.infantCount  ?? 0)
 // ─── Fetch flight ─────────────────────────────────────────────────────────────
 onMounted(async () => {
   try {
-    const res = await httpClient.get(`/flights/${props.flightId}`)
+    const res = await httpClient.get(`/api/v1/flights/${props.flightId}`)
     flight.value = res.data?.data ?? res.data
   } catch (e) {
     error.value = 'Gagal memuat data penerbangan.'
