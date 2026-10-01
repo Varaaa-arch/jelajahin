@@ -21,7 +21,7 @@ class AdminOrderController extends Controller
 {
     use ReleasesBookingSeats;
 
-    public const ORDER_STATUSES = ['pending', 'confirmed', 'completed', 'cancelled', 'refund_requested', 'refunded'];
+    public const ORDER_STATUSES = ['pending', 'awaiting_confirmation', 'confirmed', 'completed', 'cancelled', 'refund_requested', 'refunded'];
 
     public const PAYMENT_MAP = [
         'paid' => ['success'],
@@ -31,7 +31,8 @@ class AdminOrderController extends Controller
 
     /** Transisi status yang diizinkan. */
     public const TRANSITIONS = [
-        'pending' => ['confirmed', 'cancelled'],
+        'pending' => ['cancelled'],
+        'awaiting_confirmation' => ['confirmed', 'cancelled'],
         'confirmed' => ['completed', 'cancelled', 'refund_requested'],
         'refund_requested' => ['refunded', 'cancelled', 'confirmed'],
         'completed' => [],
@@ -179,11 +180,12 @@ class AdminOrderController extends Controller
         ]);
     }
 
-    /** Ubah status pesanan (confirm / complete / cancel / refund flow). */
+    /** Ubah status pesanan (approve / complete / cancel / refund flow). */
     public function updateStatus(Request $request, Booking $order)
     {
         $data = $request->validate([
             'status' => 'required|in:pending,confirmed,completed,cancelled,refund_requested,refunded',
+            'rejection_reason' => 'nullable|string|max:1000',
         ]);
 
         $from = $order->status;
@@ -198,8 +200,21 @@ class AdminOrderController extends Controller
             return back()->withErrors(['status' => "Transisi {$from} → {$to} tidak diizinkan."]);
         }
 
-        DB::transaction(function () use ($order, $to) {
-            $order->update(['status' => $to]);
+        // Approval flow: saat admin persetujui booking yang sudah dibayar
+        // (awaiting_confirmation → confirmed), PaymentService yang menanggung
+        // konfirmasi kursi + generate e-tiket/invoice + notif user.
+        $approved = $from === 'awaiting_confirmation' && $to === 'confirmed';
+        // Penolakan: booking sudah dibayar tapi ditolak admin
+        // (awaiting_confirmation → cancelled) → refund otomatis + lepas kursi.
+        $rejected = $from === 'awaiting_confirmation' && $to === 'cancelled';
+        $rejectionReason = $data['rejection_reason'] ?? null;
+
+        DB::transaction(function () use ($order, $to, $approved, $rejected, $rejectionReason) {
+            if ($approved) {
+                app(\App\Services\PaymentService::class)->approveBooking($order);
+            } else {
+                $order->update(['status' => $to]);
+            }
 
             if (in_array($to, ['cancelled', 'refunded'], true)) {
                 $this->releaseSeats($order);
@@ -207,10 +222,33 @@ class AdminOrderController extends Controller
                 if ($latest && $to === 'refunded') {
                     $latest->update(['status' => 'refunded']);
                 }
+
+                if ($rejected) {
+                    app(\App\Services\RefundService::class)
+                        ->createAutoRefundForRejectedBooking(
+                            $order->fresh(['payment', 'refunds']),
+                            $rejectionReason ?? 'Pesanan ditolak admin setelah pembayaran. Refund otomatis.'
+                        );
+                }
             }
         });
 
-        return $this->redirectAfter($request, $order, "Pesanan {$order->pnr_code} diubah menjadi {$to}.");
+        if ($rejected) {
+            try {
+                app(\App\Services\NotificationService::class)
+                    ->notifyBookingRejected($order->fresh(['user', 'flight']), $rejectionReason);
+            } catch (\Throwable $e) {
+                \Log::error('Notify booking rejected failed', ['order' => $order->id, 'error' => $e->getMessage()]);
+            }
+        }
+
+        $message = $approved
+            ? "Pesanan {$order->pnr_code} dikonfirmasi. E-tiket & invoice tergenerate."
+            : ($rejected
+                ? "Pesanan {$order->pnr_code} ditolak. Kursi dilepas & refund otomatis dibuat."
+                : "Pesanan {$order->pnr_code} diubah menjadi {$to}.");
+
+        return $this->redirectAfter($request, $order, $message);
     }
 
     /** Modify: add-ons + special requests (tanpa ganti flight / jumlah penumpang). */

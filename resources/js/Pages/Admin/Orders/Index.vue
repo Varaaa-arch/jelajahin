@@ -138,7 +138,7 @@ function submitReschedule(payload: { new_flight_id: string }): void {
     });
 }
 
-function submitStatus(payload: { status: string }): void {
+function submitStatus(payload: { status: string; rejection_reason?: string }): void {
     if (!selected.value) return;
     formProcessing.value = true;
     formErrors.value = {};
@@ -152,6 +152,19 @@ function submitStatus(payload: { status: string }): void {
 
 function viewReceipt(order: AdminOrder, doc: 'eticket' | 'invoice'): void {
     window.open(`/admin/orders/${order.id}/receipt?doc=${doc}`, '_blank');
+}
+
+function approveOrder(order: AdminOrder): void {
+    formProcessing.value = true;
+    formErrors.value = {};
+    router.put(`/admin/orders/${order.id}/status`, { status: 'confirmed' }, {
+        preserveScroll: true,
+        preserveState: true,
+        replace: true,
+        only: ['orders', 'flash', 'errors'],
+        onError: (e) => (formErrors.value = e as Record<string, string>),
+        onFinish: () => (formProcessing.value = false),
+    });
 }
 
 function exportCsv(): void {
@@ -229,6 +242,7 @@ const isEmpty = computed(() => !loading.value && props.orders.data.length === 0)
                 @cancel="openCancel"
                 @reschedule="openReschedule"
                 @status="openStatus"
+                @approve="approveOrder"
             />
             <div v-if="isEmpty" class="rounded-b-2xl border border-t-0 border-gray-200 bg-white px-5 py-8 text-center">
                 <button type="button" class="text-xs font-bold text-teal-dark hover:underline" @click="resetFilters">

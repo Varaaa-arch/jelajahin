@@ -2,57 +2,124 @@
 
 namespace Database\Seeders;
 
-use App\Models\Flight;
 use App\Models\Route;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class FlightSeeder extends Seeder
 {
+    /** Jam keberangkatan yang dipakai bergiliran (2 slot per rute per hari). */
+    private const SLOTS = [
+        '05:45', '07:10', '08:30', '10:00', '11:30', '13:00',
+        '14:30', '16:00', '17:30', '19:00', '20:30', '21:45',
+    ];
+
+    private const DAYS_AHEAD = 30;
+
+    private const DAYS_BACK = 7;
+
     public function run(): void
     {
-        $routes = Route::with(['airline', 'originAirport', 'destinationAirport'])->get();
+        $routes = Route::with(['airline', 'originAirport', 'destinationAirport'])
+            ->where('is_active', true)
+            ->orderBy('id')
+            ->get();
 
-        $routeIdx = 0;
-        $flights = [];
+        if ($routes->isEmpty()) {
+            return;
+        }
 
-        foreach ($routes as $route) {
-            $routeIdx++;
+        $now = now();
+        $rows = [];
 
-            // Mix of upcoming (+1..+14 days) and past (-5..-30 days) departures
-            $dates = [
-                now()->addDays(($routeIdx % 5) + 1)->toDateString(),
-                now()->addDays(($routeIdx % 7) + 8)->toDateString(),
-                now()->subDays(($routeIdx % 6) + 10)->toDateString(),
-            ];
+        foreach ($routes as $routeIdx => $route) {
+            $duration = (int) ($route->estimated_duration_minutes ?? 90);
+            $distance = (int) ($route->distance_km ?? 800);
+            $prefix = $route->flight_number_prefix ?: ($route->airline?->code ?? 'JT');
 
-            foreach ($dates as $i => $date) {
-                $flightNumber = $route->flight_number_prefix . str_pad((string) (100 + $routeIdx + $i), 3, '0', STR_PAD_LEFT);
+            // Penerbangan masa depan: 30 hari × 2 slot/hari, status scheduled.
+            for ($day = 0; $day < self::DAYS_AHEAD; $day++) {
+                $date = $now->copy()->addDays($day)->toDateString();
+                $slotA = self::SLOTS[($routeIdx * 2 + $day) % count(self::SLOTS)];
+                $slotB = self::SLOTS[($routeIdx * 2 + $day + 5) % count(self::SLOTS)];
 
-                $flights[] = [
-                    'route_id' => $route->id,
-                    'aircraft_id' => null,
-                    'flight_number' => $flightNumber,
-                    'departure_date' => $date,
-                    'departure_time' => ['07:00', '12:30', '16:45', '19:20'][($routeIdx + $i) % 4],
-                    'arrival_time' => ['08:50', '14:20', '18:35', '21:10'][($routeIdx + $i) % 4],
-                    'base_price' => (600000 + ($routeIdx * 75000) + ($i * 50000)),
-                    'tax_surcharge' => 60000,
-                    'fuel_surcharge' => 45000,
-                    'status' => 'scheduled',
-                    'seats_available' => 60 + ($i * 10),
-                ];
+                foreach ([$slotA, $slotB] as $slotIdx => $departure) {
+                    $rows[] = $this->makeRow($route->id, $prefix, $routeIdx, $day, $slotIdx, $date, $departure, $duration, $distance, $this->futureStatus($date, $departure), $now);
+                }
+            }
+
+            // Riwayat: 7 hari ke belakang × 1 slot/hari, status arrived.
+            for ($day = 1; $day <= self::DAYS_BACK; $day++) {
+                $date = $now->copy()->subDays($day)->toDateString();
+                $departure = self::SLOTS[($routeIdx + $day) % count(self::SLOTS)];
+                $rows[] = $this->makeRow($route->id, $prefix, $routeIdx, -$day, 3, $date, $departure, $duration, $distance, 'arrived', $now);
             }
         }
 
-        foreach ($flights as $flight) {
-            Flight::updateOrCreate(['flight_number' => $flight['flight_number']], $flight);
+        // Upsert batch: flight_number unik, idempoten bila seed dijalankan ulang.
+        foreach (array_chunk($rows, 500) as $chunk) {
+            DB::table('flights')->upsert($chunk, ['flight_number'], [
+                'route_id', 'departure_date', 'departure_time', 'arrival_time',
+                'base_price', 'tax_surcharge', 'fuel_surcharge', 'status',
+                'seats_available', 'updated_at',
+            ]);
         }
 
-        // Make some past flights "arrived/completed" for realistic history
-        Flight::where('departure_date', '<', now()->toDateString())
-            ->inRandomOrder()
-            ->limit(max(1, intdiv(Flight::count(), 3)))
-            ->update(['status' => 'arrived']);
+        $this->command?->info('FlightSeeder: ' . count($rows) . ' flights upserted, ' . DB::table('flights')->count() . ' total in DB');
+    }
+
+    private function makeRow(string $routeId, string $prefix, int $routeIdx, int $day, int $slotIdx, string $date, string $departure, int $duration, int $distance, string $status, $now): array
+    {
+        // Nomor unik per (rute, hari, slot): prefix + digit.
+        // Tiap rute dapat pita 200 angka (butuh 37 hari × 4 = 148),
+        // tiap hari dapat 4 slot (dipakai 0,1 masa depan & 3 riwayat).
+        $dayIdx = $day + self::DAYS_BACK; // 0..36
+        $number = 1000 + $routeIdx * 200 + $dayIdx * 4 + $slotIdx;
+        $arrival = date('H:i', strtotime("{$date} {$departure}") + ($duration + 15) * 60);
+
+        return [
+            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'route_id' => $routeId,
+            'aircraft_id' => null, // diisi FlightSeatSeeder per maskapai
+            'flight_number' => $prefix . str_pad((string) $number, 5, '0', STR_PAD_LEFT),
+            'departure_date' => $date,
+            'departure_time' => $departure,
+            'arrival_time' => $arrival,
+            'base_price' => $this->price($distance, $routeIdx, $day, $slotIdx, $departure),
+            'tax_surcharge' => 50000,
+            'fuel_surcharge' => 40000,
+            'status' => $status,
+            'seats_available' => 60, // selaras B737-800 60 kursi di FlightSeatSeeder
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
+    }
+
+    private function price(int $distance, int $routeIdx, int $day, int $slotIdx, string $departure): int
+    {
+        $base = 350000 + $distance * 850;
+        // Variasi deterministik ± biar harga antar hari/jam tidak kembar.
+        $variance = (($routeIdx * 37 + ($day + 30) * 11 + $slotIdx * 7) % 9) * 25000;
+        // Jam prime-time (pagi & sore) sedikit lebih mahal.
+        $hour = (int) substr($departure, 0, 2);
+        $prime = ($hour >= 6 && $hour <= 9) || ($hour >= 16 && $hour <= 20) ? 75000 : 0;
+
+        return (int) (round(($base + $variance + $prime) / 1000) * 1000);
+    }
+
+    /**
+     * Hari ini yang jamnya sudah dekat → boarding, sisanya scheduled.
+     * Status valid sesuai ENUM DB (scheduled, boarding, departed, arrived, cancelled).
+     */
+    private function futureStatus(string $date, string $departure): string
+    {
+        if ($date !== now()->toDateString()) {
+            return 'scheduled';
+        }
+
+        $dep = strtotime("{$date} {$departure}");
+        $diff = $dep - time();
+
+        return ($diff > -1800 && $diff < 5400) ? 'boarding' : 'scheduled';
     }
 }

@@ -35,7 +35,9 @@ class PaymentService
 
         if ($payment->expires_at && $payment->expires_at < now()) {
             $this->updatePaymentStatus($payment, 'expired');
-            $this->updateBookingStatus($payment->booking, 'payment_expired');
+            // Token kedaluwarsa: booking kembali/stay pending agar user bisa
+            // initiate payment ulang. JANGAN pakai status siluman.
+            $this->updateBookingStatus($payment->booking, 'pending');
             throw new \Exception("Payment token expired");
         }
 
@@ -43,17 +45,15 @@ class PaymentService
 
         if ($isSuccess) {
             $this->updatePaymentStatus($payment, 'success');
-            $this->updateBookingStatus($payment->booking, 'confirmed');
+            // Pembayaran sukses tapi booking BELANG konfirmasi: menunggu
+            // persetujuan admin sebelum kursi di-booked + e-tiket tergenerate.
+            $this->updateBookingStatus($payment->booking, 'awaiting_confirmation');
 
-            // Konfirmasi kursi di Go service (tandai booked di Redis, hapus lock)
-            $this->confirmSeatsInGoService($payment->booking);
+            // Tahan kursi lebih lama (24 jam) agar tidak direbut orang lain
+            // selama menunggu persetujuan admin (lock awal cuma 15 menit).
+            $this->extendSeatHold($payment->booking);
 
-            // Generate dokumen (e-tiket + invoice) agar muncul di dashboard.
-            // Non-blocking: kegagalan generate tidak menggagalkan pembayaran.
-            $this->generateDocuments($payment->booking);
-
-            // Send notifications (user) + alert admin
-            $this->notificationService->notifyBookingComplete($payment->booking);
+            // Alert admin agar ada order baru yang perlu dipersetujui.
             $this->notificationService->notifyAdminsNewBooking($payment->booking->fresh(['user', 'flight']));
 
             return [
@@ -66,7 +66,8 @@ class PaymentService
             ];
         } else {
             $this->updatePaymentStatus($payment, 'failed');
-            $this->updateBookingStatus($payment->booking, 'payment_failed');
+            // Payment gagal: booking tetap pending agar user bisa coba bayar lagi.
+            $this->updateBookingStatus($payment->booking, 'pending');
 
             return [
                 'success' => false,
@@ -97,18 +98,18 @@ class PaymentService
         $this->updatePaymentStatus($payment, $mappedStatus);
 
         if ($mappedStatus === 'success') {
-            $this->updateBookingStatus($payment->booking, 'confirmed');
+            // Pembayaran sukses tapi booking BELANG konfirmasi admin.
+            $this->updateBookingStatus($payment->booking, 'awaiting_confirmation');
 
-            // Konfirmasi kursi di Go service (tandai booked di Redis, hapus lock)
-            $this->confirmSeatsInGoService($payment->booking);
+            // Tahan kursi lebih lama selama menunggu persetujuan admin.
+            $this->extendSeatHold($payment->booking);
 
-            // Generate dokumen (e-tiket + invoice) agar muncul di dashboard
-            $this->generateDocuments($payment->booking);
-
-            $this->notificationService->notifyBookingComplete($payment->booking);
+            // Alert admin agar ada order baru yang perlu dipersetujui.
             $this->notificationService->notifyAdminsNewBooking($payment->booking->fresh(['user', 'flight']));
         } elseif (in_array($mappedStatus, ['expired', 'deny', 'failed'])) {
-            $this->updateBookingStatus($payment->booking, 'payment_failed');
+            // Payment gagal/expired: booking tetap pending agar bisa retry.
+            // (Dulu pakai status siluman payment_failed -> error CHECK DB.)
+            $this->updateBookingStatus($payment->booking, 'pending');
         }
 
         return [
@@ -178,6 +179,84 @@ class PaymentService
             'created_at' => $payment->created_at->toIso8601String(),
             'booking_status' => $payment->booking->status,
         ];
+    }
+
+    /**
+     * Finalize booking setelah admin persetujuan (awaiting_confirmation → confirmed).
+     *
+     * Setelah pembayaran sukses, kursi masih di-lock (Redis) dan dokumen belum
+     * tergenerate. Saat admin persetujui di panel, metode ini:
+     *   1. Ubah status booking menjadi confirmed.
+     *   2. Konfirmasi kursi di Go service (tandai booked secara permanen).
+     *   3. Generate e-tiket + invoice (paid) agar muncul di dashboard.
+     *   4. Kirim notifikasi "confirmed" + "ticket ready" ke user.
+     *
+     * Idempoten: kalau booking bukan lagi awaiting_confirmation (misal. sudah
+     * confirmed/completed), metode tidak melakukan apa-apa.
+     *
+     * @param Booking $booking booking yang baru disetujui admin.
+     */
+    public function approveBooking(Booking $booking): void
+    {
+        if ($booking->status !== 'awaiting_confirmation') {
+            Log::info("PaymentService: booking {$booking->pnr_code} tidak di-awaiting_confirmation, jadi tidak diproces ulang.");
+            return;
+        }
+
+        $this->updateBookingStatus($booking, 'confirmed');
+
+        // Konfirmasi kursi di Go service (tandai booked di Redis, hapus lock)
+        $this->confirmSeatsInGoService($booking);
+
+        // Generate dokumen (e-tiket + invoice) agar muncul di dashboard.
+        // Non-blocking: kegagalan generate tidak menggagalkan konfirmasi.
+        $this->generateDocuments($booking);
+
+        // Send notifications (user) — kursi sudah terkonfirmasi & tiket siap.
+        $this->notificationService->notifyBookingComplete($booking->fresh(['user', 'flight', 'passengers']));
+    }
+
+    /**
+     * Perpanjang masa tahan kursi di Go service selama menunggu persetujuan
+     * admin (default lock cuma 15 menit, approval bisa berjam-jam).
+     *
+     * Best-effort: gagal extend hanya dicatat di log, tidak menggagalkan payment.
+     */
+    private function extendSeatHold(Booking $booking): void
+    {
+        try {
+            $seatIds = $booking->passengers()
+                ->whereNotNull('flight_seat_id')
+                ->pluck('flight_seat_id')
+                ->filter()
+                ->values()
+                ->toArray();
+
+            if (empty($seatIds)) {
+                return;
+            }
+
+            $response = Http::timeout(5)->post("{$this->goServiceUrl}/api/v1/seats/extend", [
+                'flight_id' => $booking->flight_id,
+                'seat_ids' => $seatIds,
+                'user_id' => (string) $booking->user_id,
+                // 24 jam dalam detik — Go pakai ini sebagai TTL baru.
+                'ttl_seconds' => 24 * 3600,
+            ]);
+
+            if (! $response->successful()) {
+                Log::warning('PaymentService: Go service gagal extend seat hold', [
+                    'booking_id' => $booking->id,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('PaymentService: failed to extend seat hold in Go service', [
+                'booking_id' => $booking->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -281,12 +360,15 @@ class PaymentService
 
     private function updateBookingStatus(Booking $booking, string $status): void
     {
+        // Harus sama dengan CHECK/ENUM di DB + ORDER_STATUSES admin.
         $validStatuses = [
             'pending',
+            'awaiting_confirmation',
             'confirmed',
-            'payment_failed',
-            'payment_expired',
+            'completed',
             'cancelled',
+            'refund_requested',
+            'refunded',
         ];
 
         if (!in_array($status, $validStatuses)) {

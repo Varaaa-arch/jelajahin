@@ -93,6 +93,12 @@ class BookingDocumentController extends Controller
 
     private function downloadETicket(Booking $booking): Response
     {
+        // E-tiket hanya boleh diunduh setelah admin menyetujui booking.
+        // Sebelum itu (pending / awaiting_confirmation) dokumen belum ada.
+        if (in_array($booking->status, ['pending', 'awaiting_confirmation'], true)) {
+            abort(403, 'E-tiket belum tersedia. Pesanan masih menunggu persetujuan admin.');
+        }
+
         $ctx = $this->bookingContext($booking);
 
         $pdf = Pdf::loadView('documents.ticket', $ctx)

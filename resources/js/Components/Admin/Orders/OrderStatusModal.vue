@@ -13,10 +13,18 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: 'close'): void;
-    (e: 'submit', payload: { status: string }): void;
+    (e: 'submit', payload: { status: string; rejection_reason?: string }): void;
 }>();
 
 const selected = ref('');
+const rejectionReason = ref('');
+
+const showReason = computed(() => {
+    return (
+        props.order?.order_status === 'awaiting_confirmation' &&
+        selected.value === 'cancelled'
+    );
+});
 
 const options = computed(() => {
     if (!props.order) return [];
@@ -28,16 +36,30 @@ const options = computed(() => {
 });
 
 const DESCRIPTIONS: Record<string, string> = {
-    confirmed: 'Konfirmasi pesanan. Kursi tetap terisi.',
+    awaiting_confirmation: 'Pembayaran sukses. Menunggu persetujuan admin sebelum tiket teraktif.',
+    confirmed: 'Konfirmasi pesanan. Kursi ter-booked & e-tiket tergenerate.',
     completed: 'Tandai perjalanan selesai. Status terminal.',
-    cancelled: 'Batalkan pesanan dan kembalikan kursi ke tersedia.',
+    cancelled: 'Batalkan pesanan dan kembalikan kursi ke tersedia. Jika menolak pesanan yang sudah dibayar, refund otomatis dibuat.',
     refund_requested: 'Catat permintaan refund dari penumpang.',
     refunded: 'Selesaikan refund. Kursi dikembalikan & payment jadi refunded.',
 };
 
 watch(() => props.open, (v) => {
-    if (v) selected.value = props.mode === 'cancel' ? 'cancelled' : '';
+    if (v) {
+        selected.value = props.mode === 'cancel' ? 'cancelled' : '';
+        rejectionReason.value = '';
+    }
 }, { immediate: true });
+
+function onSubmit(): void {
+    if (!selected.value) return;
+    emit('submit', {
+        status: selected.value,
+        ...(showReason.value && rejectionReason.value.trim()
+            ? { rejection_reason: rejectionReason.value.trim() }
+            : {}),
+    });
+}
 
 const title = computed(() => (props.mode === 'cancel' ? 'Cancel Pesanan' : 'Ubah Status Pesanan'));
 </script>
@@ -63,7 +85,7 @@ const title = computed(() => (props.mode === 'cancel' ? 'Cancel Pesanan' : 'Ubah
                         </button>
                     </div>
 
-                    <form class="space-y-3 px-6 py-5" @submit.prevent="selected && emit('submit', { status: selected })">
+                    <form class="space-y-3 px-6 py-5" @submit.prevent="onSubmit">
                         <p class="text-xs text-gray-500">
                             {{ order?.pnr }} · {{ order?.booker_name }} · status saat ini:
                             <span class="font-bold text-gray-800">{{ order?.order_status }}</span>
@@ -90,6 +112,20 @@ const title = computed(() => (props.mode === 'cancel' ? 'Cancel Pesanan' : 'Ubah
                         </div>
 
                         <p v-if="errors?.status" class="text-xs text-red-600">{{ errors.status }}</p>
+
+                        <div v-if="showReason" class="space-y-1.5">
+                            <label for="rejection-reason" class="text-xs font-bold text-gray-700">
+                                Alasan penolakan <span class="font-normal text-gray-400">(opsional, dikirim ke user + refund)</span>
+                            </label>
+                            <textarea
+                                id="rejection-reason"
+                                v-model="rejectionReason"
+                                rows="3"
+                                maxlength="1000"
+                                placeholder="cth. Kursi tidak tersedia / data penumpang tidak valid..."
+                                class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-navy focus:outline-none"
+                            />
+                        </div>
 
                         <div class="flex justify-end gap-2 pt-1">
                             <button type="button" class="rounded-xl border border-gray-300 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50" @click="emit('close')">

@@ -79,6 +79,50 @@ class RefundService
         });
     }
 
+    /**
+     * Auto-refund saat admin MENOLAK booking yang sudah dibayar
+     * (awaiting_confirmation -> cancelled). Dipakai AdminOrderController.
+     *
+     * Idempoten: kalau sudah ada refund pending/approved/processed untuk
+     * booking ini, kembalikan yang ada tanpa buat dobel.
+     */
+    public function createAutoRefundForRejectedBooking(Booking $booking, ?string $reason = null): ?Refund
+    {
+        $existing = $booking->refunds()
+            ->whereIn('status', [Refund::STATUS_PENDING, Refund::STATUS_APPROVED, Refund::STATUS_PROCESSED])
+            ->latest()
+            ->first();
+        if ($existing) {
+            return $existing;
+        }
+
+        $payment = $booking->payment()->where('status', 'success')->latest()->first()
+            ?? $booking->payment()->latest()->first();
+
+        if (! $payment) {
+            return null;
+        }
+
+        return DB::transaction(function () use ($booking, $payment, $reason) {
+            $refund = Refund::create([
+                'booking_id' => $booking->id,
+                'payment_id' => $payment->id,
+                'user_id' => $booking->user_id,
+                'refund_number' => $this->generateRefundNumber(),
+                'reason' => $reason ?? 'Pesanan ditolak admin setelah pembayaran. Refund otomatis.',
+                'refund_type' => Refund::TYPE_FULL,
+                'requested_amount' => $booking->total_price,
+                'status' => Refund::STATUS_PENDING,
+            ]);
+
+            $payment->update(['status' => 'refunded']);
+
+            $this->notificationService->notifyRefundRequested($refund);
+
+            return $refund;
+        });
+    }
+
     public function approveRefund(Refund $refund, ?float $approvedAmount = null): Refund
     {
         if (! $refund->isPending()) {

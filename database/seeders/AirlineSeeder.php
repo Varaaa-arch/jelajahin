@@ -14,6 +14,8 @@ class AirlineSeeder extends Seeder
             ['name' => 'Lion Air', 'code' => 'JT'],
             ['name' => 'Batik Air', 'code' => 'ID'],
             ['name' => 'Citilink', 'code' => 'QG'],
+            ['name' => 'Indonesia AirAsia', 'code' => 'IW'],
+            ['name' => 'Sriwijaya Air', 'code' => 'SJ'],
         ];
 
         foreach ($airlines as $airline) {

@@ -15,7 +15,8 @@
           </div>
           <h1 class="text-3xl font-bold text-gray-900 mb-2">Pembayaran Berhasil!</h1>
           <p class="text-gray-500">
-            Tiket kamu sudah dikonfirmasi dan e-tiket telah dikirim ke email.
+            Pemesanan kamu sedang menunggu persetujuan admin. E-tiket akan dikirim ke email setelah
+            pesanan dikonfirmasi.
           </p>
 
           <!-- Chip PNR + salin -->
@@ -51,8 +52,8 @@
                   <p class="text-xs text-white/60">{{ flightNumber }}</p>
                 </div>
               </div>
-              <span class="inline-flex items-center gap-1.5 bg-teal text-white text-xs font-bold px-3 py-1.5 rounded-full shrink-0">
-                <BadgeCheck class="w-4 h-4" /> Confirmed
+              <span class="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-full shrink-0">
+                <BadgeCheck class="w-4 h-4" /> Menunggu Konfirmasi
               </span>
             </div>
           </div>
@@ -165,15 +166,19 @@
 
         <!-- Aksi -->
         <div class="space-y-3">
+          <!-- E-tiket baru tersedia setelah admin menyetujui pesanan. -->
+          <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p class="font-bold">E-tiket belum tersedia</p>
+            <p class="mt-0.5">Pesananmu sedang menunggu persetujuan admin. E-tiket (PDF) bisa diunduh dari halaman Pesanan Saya setelah status berubah menjadi Dikonfirmasi.</p>
+          </div>
           <button
             type="button"
-            @click="downloadDoc('eticket')"
-            :disabled="downloading !== ''"
-            class="w-full flex items-center justify-center gap-2 bg-teal hover:bg-teal-600 disabled:opacity-70 text-white font-bold py-3.5 px-6 rounded-2xl transition-all shadow-lg shadow-teal/25 active:scale-[0.99]"
+            disabled
+            title="E-tiket tersedia setelah admin konfirmasi"
+            class="w-full flex items-center justify-center gap-2 bg-gray-200 text-gray-500 font-bold py-3.5 px-6 rounded-2xl cursor-not-allowed"
           >
-            <LoaderCircle v-if="downloading === 'eticket'" class="w-5 h-5 animate-spin" />
-            <Download v-else class="w-5 h-5" />
-            {{ downloading === 'eticket' ? 'Menyiapkan PDF...' : 'Unduh E-Tiket (PDF)' }}
+            <Download class="w-5 h-5" />
+            Unduh E-Tiket (tersedia setelah dikonfirmasi)
           </button>
 
           <div class="grid grid-cols-2 gap-3">
@@ -293,7 +298,7 @@ const methodIcon = computed(() => {
 })
 
 const nextSteps = [
-  { icon: MailCheck, title: 'Cek email kamu', desc: 'E-tiket dan invoice telah dikirim ke email terdaftar.' },
+  { icon: MailCheck, title: 'Cek email kamu', desc: 'E-tiket dan invoice dikirim ke email terdaftar setelah admin konfirmasi pesanan.' },
   { icon: QrCode, title: 'Siapkan kode PNR', desc: 'Tunjukkan kode pemesanan beserta identitas saat check-in.' },
   { icon: Clock, title: 'Datang lebih awal', desc: 'Tiba di bandara minimal 2 jam sebelum keberangkatan.' },
 ]

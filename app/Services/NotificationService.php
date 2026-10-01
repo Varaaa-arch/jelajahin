@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\AdminNewBookingNotification;
 use App\Notifications\AdminRefundRequestedNotification;
 use App\Notifications\BookingConfirmedNotification;
+use App\Notifications\BookingRejectedNotification;
 use App\Notifications\RefundApprovedNotification;
 use App\Notifications\RefundProcessedNotification;
 use App\Notifications\RefundRejectedNotification;
@@ -60,6 +61,22 @@ class NotificationService
         $etickets = ETicket::where('booking_id', $booking->id)->get();
         foreach ($etickets as $eticket) {
             $this->notifyTicketReady($eticket);
+        }
+    }
+
+    /**
+     * Send booking rejected notification (admin menolak awaiting_confirmation).
+     * Refund otomatis dibuat terpisah oleh AdminOrderController.
+     */
+    public function notifyBookingRejected(Booking $booking, ?string $reason = null): void
+    {
+        try {
+            if ($booking->user) {
+                $booking->user->notify(new BookingRejectedNotification($booking, $reason));
+                \Log::info("Booking rejected notification sent for booking: {$booking->pnr_code}");
+            }
+        } catch (\Exception $e) {
+            \Log::error("Failed to send booking rejected notification: {$e->getMessage()}");
         }
     }
 
