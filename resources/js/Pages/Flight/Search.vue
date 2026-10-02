@@ -275,8 +275,8 @@ function formatDuration(dep: string, arr: string) {
                       <button
                         type="button"
                         :class="[
-                          'w-10 h-5 rounded-full transition-all relative shrink-0',
-                          searchParams.round_trip ? 'bg-blue-500' : 'bg-gray-200'
+                          'w-10 h-5 rounded-full transition-colors duration-200 relative shrink-0',
+                          searchParams.round_trip ? 'bg-blue-500' : 'bg-gray-300'
                         ]"
                         :aria-checked="searchParams.round_trip"
                         role="switch"
@@ -284,10 +284,8 @@ function formatDuration(dep: string, arr: string) {
                         @click="searchParams.round_trip = !searchParams.round_trip"
                       >
                         <span
-                          :class="[
-                            'absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform',
-                            searchParams.round_trip ? 'translate-x-5' : 'translate-x-0.5'
-                          ]"
+                          class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"
+                          :style="{ transform: searchParams.round_trip ? 'translateX(22px)' : 'translateX(2px)' }"
                         />
                       </button>
                     </label>
@@ -304,23 +302,23 @@ function formatDuration(dep: string, arr: string) {
                 </div>
 
                 <!-- Return date -->
-                <div
-                  :class="[
-                    'px-5 py-4 transition-opacity',
-                    searchParams.round_trip ? 'opacity-100' : 'opacity-30 pointer-events-none'
-                  ]"
-                >
-                  <p class="text-xs text-gray-400 mb-1">Pulang</p>
-                  <p class="text-base font-bold text-gray-900">
-                    {{ searchParams.round_trip ? formatDateDisplay(searchParams.return_date) : '—' }}
-                  </p>
-                  <input
-                    v-model="searchParams.return_date"
-                    type="date"
-                    :disabled="!searchParams.round_trip"
-                    class="mt-1 text-xs text-gray-400 border border-gray-100 rounded-lg px-2 py-1 focus:ring-1 focus:ring-blue-300 focus:border-blue-300 outline-none bg-white w-full disabled:opacity-40"
-                    aria-label="Tanggal pulang"
-                  />
+                <div class="px-5 py-4">
+                  <template v-if="searchParams.round_trip">
+                    <p class="text-xs text-gray-400 mb-1">Pulang</p>
+                    <p class="text-base font-bold text-gray-900">
+                      {{ formatDateDisplay(searchParams.return_date) }}
+                    </p>
+                    <input
+                      v-model="searchParams.return_date"
+                      type="date"
+                      class="mt-1 text-xs text-gray-400 border border-gray-100 rounded-lg px-2 py-1 focus:ring-1 focus:ring-blue-300 focus:border-blue-300 outline-none bg-white w-full"
+                      aria-label="Tanggal pulang"
+                    />
+                  </template>
+                  <template v-else>
+                    <p class="text-xs text-gray-300 mb-1">Pulang</p>
+                    <p class="text-sm text-gray-300 italic">Sekali jalan</p>
+                  </template>
                 </div>
               </div>
             </div>

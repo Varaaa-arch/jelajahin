@@ -6,101 +6,116 @@
   <title>Reset Password — Jelajahin</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #f1f5f9; font-family: 'Segoe UI', Arial, sans-serif; }
-    .wrapper { max-width: 520px; margin: 40px auto; padding: 0 16px 40px; }
+    body {
+      background: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    }
+    .wrapper {
+      max-width: 480px;
+      margin: 40px auto;
+      padding: 0 16px 48px;
+    }
     .card {
       background: #ffffff;
-      border-radius: 20px;
+      border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     }
+
+    /* Header */
     .header {
-      background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
-      padding: 36px 40px 32px;
+      background: #0f172a;
+      padding: 28px 40px;
       text-align: center;
     }
-    .logo-icon {
-      width: 40px; height: 40px;
-      background: #0ea5a0;
-      border-radius: 12px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+    .header img {
+      height: 36px;
+      width: auto;
+      filter: invert(1) brightness(2);
     }
-    .logo-text {
-      color: #ffffff;
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-    }
-    .body { padding: 36px 40px; }
-    .greeting {
-      font-size: 15px;
-      color: #64748b;
-      margin-bottom: 6px;
+
+    /* Body */
+    .body {
+      padding: 36px 40px 32px;
     }
     .title {
-      font-size: 22px;
-      font-weight: 800;
+      font-size: 20px;
+      font-weight: 700;
       color: #0f172a;
-      margin-bottom: 16px;
+      margin-bottom: 8px;
     }
-    .desc {
+    .subtitle {
       font-size: 14px;
       color: #64748b;
-      line-height: 1.7;
+      line-height: 1.6;
       margin-bottom: 32px;
     }
-    .otp-box {
-      background: linear-gradient(135deg, #f0fdfc 0%, #e6fffe 100%);
-      border: 2px solid #99f6e4;
-      border-radius: 16px;
-      padding: 28px;
-      text-align: center;
-      margin-bottom: 28px;
-    }
+
+    /* OTP digits */
     .otp-label {
       font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      color: #0ea5a0;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      color: #94a3b8;
       text-transform: uppercase;
-      margin-bottom: 12px;
+      text-align: center;
+      margin-bottom: 14px;
     }
-    .otp-code {
-      font-size: 48px;
-      font-weight: 900;
-      letter-spacing: 10px;
+    .digits {
+      display: table;
+      margin: 0 auto 8px;
+      border-collapse: separate;
+      border-spacing: 6px 0;
+    }
+    .digits td { display: table-cell; vertical-align: middle; }
+    .digit-box {
+      display: inline-block;
+      width: 52px;
+      height: 64px;
+      line-height: 64px;
+      text-align: center;
+      background: #fffbf8;
+      border: 1.5px solid #fed7aa;
+      border-bottom: 3px solid #f97316;
+      border-radius: 10px;
+      font-size: 30px;
+      font-weight: 800;
       color: #0f172a;
       font-family: 'Courier New', monospace;
-      line-height: 1;
     }
-    .otp-digit { display: inline-block; }
-    .otp-timer {
-      margin-top: 12px;
+    .digit-sep {
+      display: inline-block;
+      font-size: 22px;
+      color: #cbd5e1;
+      padding: 0 2px;
+      vertical-align: middle;
+    }
+    .otp-expire {
+      text-align: center;
       font-size: 12px;
       color: #94a3b8;
+      margin-top: 10px;
+      margin-bottom: 28px;
     }
-    .otp-timer strong { color: #0ea5a0; }
+    .otp-expire strong { color: #f97316; }
+
+    /* Warning */
     .warning {
-      background: #fff7ed;
-      border-left: 3px solid #f97316;
-      border-radius: 8px;
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      border-radius: 10px;
       padding: 12px 16px;
-      margin-bottom: 24px;
-    }
-    .warning p {
-      font-size: 12px;
-      color: #92400e;
+      font-size: 12.5px;
+      color: #9f1239;
       line-height: 1.6;
     }
+
+    /* Footer */
     .footer {
       background: #f8fafc;
       border-top: 1px solid #e2e8f0;
-      padding: 24px 40px;
+      padding: 18px 40px;
       text-align: center;
-    }
-    .footer p {
       font-size: 11px;
       color: #94a3b8;
       line-height: 1.8;
@@ -113,47 +128,38 @@
     <div class="card">
 
       <div class="header">
-        <div class="logo-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-            <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19.5 2.5c-1.5-1.5-3.5-1.5-5 0L11 6 2.8 4.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 5.2 6.3c.3.4.8.5 1.3.3l.5-.3c.4-.2.6-.6.5-1.1z"/>
-          </svg>
-        </div>
-        <span class="logo-text">Jelajahin</span>
+        <img src="{{ asset('images/logo.png') }}" alt="Jelajahin" />
       </div>
 
       <div class="body">
-        <p class="greeting">Halo, <strong>{{ $name }}</strong> @include('emails.partials.lucide', ['name' => 'hand', 'size' => 16])</p>
         <h1 class="title">Reset Password</h1>
-        <p class="desc">
-          Kami menerima permintaan pengaturan ulang password untuk akun Jelajahin Anda.
-          Masukkan kode 6 digit di bawah ini untuk melanjutkan. Kode berlaku selama
-          <strong>10 menit</strong>.
+        <p class="subtitle">
+          Halo <strong>{{ $name }}</strong>, gunakan kode di bawah untuk mengatur ulang password akun Jelajahin Anda.
         </p>
 
-        <div class="otp-box">
-          <p class="otp-label">Kode Reset Password</p>
-          <div class="otp-code">
-            @foreach(str_split($code) as $digit)
-              <span class="otp-digit">{{ $digit }}</span>
+        <p class="otp-label">Kode Reset Password</p>
+
+        <table class="digits" role="presentation" cellspacing="0" cellpadding="0">
+          <tr>
+            @php $digits = str_split($code); @endphp
+            @foreach($digits as $i => $digit)
+              <td><span class="digit-box">{{ $digit }}</span></td>
+              @if($i === 2 && count($digits) === 6)
+                <td><span class="digit-sep">·</span></td>
+              @endif
             @endforeach
-          </div>
-          <p class="otp-timer">Berlaku hingga <strong>10 menit</strong> dari sekarang</p>
-        </div>
+          </tr>
+        </table>
+
+        <p class="otp-expire">Berlaku selama <strong>10 menit</strong></p>
 
         <div class="warning">
-          <p>
-            @include('emails.partials.lucide', ['name' => 'lock', 'size' => 14]) <strong>Jangan bagikan kode ini kepada siapapun.</strong>
-            Tim Jelajahin tidak akan pernah meminta kode reset password Anda.
-            Jika Anda tidak meminta ini, abaikan email ini.
-          </p>
+          🔒 <strong>Jika bukan Anda yang meminta ini, abaikan email ini.</strong> Password Anda tidak akan berubah. Tim Jelajahin tidak pernah meminta kode ini.
         </div>
       </div>
 
       <div class="footer">
-        <p>
-          Email ini dikirim otomatis oleh <a href="#">Jelajahin</a>.<br/>
-          © {{ date('Y') }} Jelajahin · Semua Hak Dilindungi
-        </p>
+        &copy; {{ date('Y') }} Jelajahin &middot; <a href="#">Hubungi Kami</a>
       </div>
 
     </div>
